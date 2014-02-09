@@ -291,16 +291,25 @@ struct MemRStream{
 	}
 	
 	@property typeof(this) save(){return typeof(this)(arr);}
+	
+	@property size_t seek(){
+		return avail();
+	}
 }
 
 unittest{
+	static assert(isSeekableRStream!MemRStream);
+	static assert(isMarkableRStream!MemRStream);
 	ubyte [7] data=[1,5,0,9,3,10,200];
 	auto s=MemRStream(data);
 	ubyte[2] temp;
 	assert(2==s.readFill(temp));
+	assert(5==s.seek);
+	assert(5==s.avail);
 	assert(temp==[1,5]);
 	assert(4==s.skip(4));
 	assert(1==s.readFill(temp));
 	assert(temp[0]==200);
 	assert(s.empty);
 }
+void main(){}
