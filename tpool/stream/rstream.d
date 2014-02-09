@@ -312,4 +312,3 @@ unittest{
 	assert(temp[0]==200);
 	assert(s.empty);
 }
-void main(){}
