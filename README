@@ -1,0 +1,2 @@
+Rangeish Stream libaray for D
+As of now there are only templates and interfaces and unittests for Reading Stream. No implementations or Writing Streams yet
