@@ -1,12 +1,14 @@
 module tpool.stream.rstream;
 import std.typetuple;
-
+import std.range;
+import std.algorithm;
+			
 //ReadStream
 interface RStream_{
 	size_t readFill(void[] buf);//reads as much as possible into buf, when the return val is not equal to buf.length ,eof is assumed
 	size_t skip(size_t len);//skips len bytes,returns bytes skiped, if the return val is not equal to buf.length, eof is assumed
 	@property size_t avail();//how many bytes can be read right now
-	@property bool empty();
+	@property bool empty();//i want you to guess what this returns
 	template IS(S){enum IS=isRStream!S;}
 }
 template isRStream(S){// thanks for std.range for nice exapmle code of this
@@ -59,35 +61,34 @@ unittest {
 	static assert(!isSeekableRStream!RStream_);
 }
 //a type stream
-//use read!(basic type)
 interface TypeRStream_:RStream_{
 	@property{
 		final{
-			auto read(T)(){//
+			auto read(T)(){//throws exception if eof is reached before T could be fully copyed
 				mixin("return read_"~T.stringof~";");
 			}
 		}
 		ubyte read_ubyte();//never call these, only implement if you overriding this interface
-		ushort read_ushort();
-		uint read_uint();
-		ulong read_ulong();
-		byte read_byte();
-		short read_short();
-		int read_int();
-		long read_long();
-		float read_float();
-		double read_double();
+		ushort read_ushort();//ditto used transform
+		uint read_uint();//ditto used transform
+		ulong read_ulong();//ditto used transform
+		byte read_byte();//ditto used transform
+		short read_short();//ditto used transform
+		int read_int();//ditto used transform
+		long read_long();//ditto used transform
+		float read_float();//ditto used transform
+		double read_double();//ditto used transform
 	}
-	size_t readAr(ubyte[]);
-	size_t readAr(ushort[]);
-	size_t readAr(uint[]);
-	size_t readAr(ulong[]);
-	size_t readAr(byte[]);
-	size_t readAr(short[]);
-	size_t readAr(int[]);
-	size_t readAr(long[]);
-	size_t readAr(float[]);
-	size_t readAr(double[]);
+	size_t readAr(ubyte[]);//returns num of data read, throws exception if eof is reached when a number is fully copyed
+	size_t readAr(ushort[]);//ditto used transform
+	size_t readAr(uint[]);//ditto used transform
+	size_t readAr(ulong[]);//ditto used transform
+	size_t readAr(byte[]);//ditto used transform
+	size_t readAr(short[]);//ditto used transform
+	size_t readAr(int[]);//ditto used transform
+	size_t readAr(long[]);//ditto used transform
+	size_t readAr(float[]);//ditto used transform
+	size_t readAr(double[]);//ditto used transform
 	template IS(S){enum IS=isTypeRStream!S;}
 }
 template isTypeRStream(S){
@@ -311,4 +312,64 @@ unittest{
 	assert(1==s.readFill(temp));
 	assert(temp[0]==200);
 	assert(s.empty);
+}
+
+
+//stream containers
+
+class EofBadFormat:Exception{
+	this(){
+		super("Found eof when expecting Number");
+	}
+}
+
+struct BigEndianRStream(S) if(isRStream!S){
+	import std.exception;
+	S stream;
+	this(S stream_){
+		stream=stream_;
+	}
+	alias stream this;
+	@property T read(T)(){
+		ubyte buf[T.sizeof];
+		auto sz=stream.readFill(buf);
+		if(sz!=T.sizeof){
+			throw new EofBadFormat();
+		}
+		version(LittleEndian){
+			buf.reverse;
+		}
+		return *(cast(T*)buf.ptr);
+	}
+	
+	size_t readAr(T)(T[] buf){
+		auto sz=stream.readFill(buf);
+		if(sz==0||sz%T.sizeof!=0){
+			throw new EofBadFormat();
+		}
+		version(LittleEndian){
+			auto temp=cast(ubyte[]) buf;//templates errors are scary
+			uint count;
+			foreach(i;temp.chunks(T.sizeof).map!(a=>a.reverse)){
+				foreach(ii;i){
+					temp[count]=ii;
+					count++;
+				}
+			}
+		}
+		return sz/T.sizeof;
+	}
+	
+}
+
+unittest {
+	ubyte[12] buf=[0,0,1,0, 1,5,   0,1,  2,0, 1,3];
+	auto stream=BigEndianRStream!MemRStream(MemRStream(buf));
+	assert(stream.read!int==256);
+	assert(!stream.empty);
+	assert(stream.read!ushort==261);
+	ushort[3] buf2;
+	assert(stream.readAr(buf2)==3);
+	assert(stream.empty);
+	assert(buf2==[1,512,259]);
 }
