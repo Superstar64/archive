@@ -2,13 +2,14 @@ module tpool.stream.rstream;
 import std.typetuple;
 import std.range;
 import std.algorithm;
-			
+alias RStreamTur=TypeTuple!(RStream_,MarkableRStream_,SeekableRStream_,TypeRStream_,DisposeRStream_);
+
 //ReadStream
 interface RStream_{
 	size_t readFill(void[] buf);//reads as much as possible into buf, when the return val is not equal to buf.length ,eof is assumed
 	size_t skip(size_t len);//skips len bytes,returns bytes skiped, if the return val is not equal to buf.length, eof is assumed
 	@property size_t avail();//how many bytes can be read right now
-	@property bool empty();//i want you to guess what this returns
+	@property bool eof();//i want you to guess what this returns
 	template IS(S){enum IS=isRStream!S;}
 }
 template isRStream(S){// thanks for std.range for nice exapmle code of this
@@ -18,7 +19,7 @@ template isRStream(S){// thanks for std.range for nice exapmle code of this
 		size_t len=s.readFill(a);
 		size_t le=s.skip(b);
 		size_t av=s.avail;
-		bool end=s.empty;
+		bool end=s.eof;
 	}));
 }
 unittest{
@@ -134,7 +135,7 @@ unittest{
 		size_t skip(size_t p){return false;}
 		@property avail(){return 0;}
 		@property size_t seek(){return 0;}
-		@property bool empty(){return true;}
+		@property bool eof(){return true;}
 		@property auto read(T)(){
 			return cast(T)0;
 		}
@@ -146,52 +147,73 @@ unittest{
 	static assert(isTypeRStream!TypeRStream_);
 	static assert(!(isTypeRStream!RStream_));
 }
+//close able Rstream
+interface DisposeRStream_:RStream_{
+	@property void close();
+	template IS(S){enum IS=isDisposeRStream!S;}
+}
 
-template RStreamWrap(S,Par=Object){//wrap S in a class
+template isDisposeRStream(S){
+	enum bool isDisposeRStream=isRStream!(S) && 
+		is(typeof((inout int=0){
+			S s=void;
+			s.close;
+		}));
+}
+
+unittest{
+	static assert(!isDisposeRStream!RStream_);
+	static assert(isDisposeRStream!DisposeRStream_);
+}
+
+template RStreamWrap(S,Par=Object){//wrap S in a class, usefull if you prefer virtual pointers over code duplication
 	static assert(isRStream!S);
 		
-		class RStreamWrap:Par,RStreamInterfaceOf!(S){
-			private S raw;alias raw this;
-			this(S s){
-				raw=s;
-			}
-			size_t readFill(void[] b){return raw.readFill(b);}
-			size_t skip(size_t b){return raw.skip(b);}
-			@property size_t avail(){return raw.avail;}
-			@property bool empty(){return raw.empty;}
-			static if(isMarkableRStream!S){
-				@property typeof(this) save(){return new RStreamWrap(raw);}
-			}
-			
-			static if(isSeekableRStream!S){
-				@property size_t seek(){return raw.seek;}
-			}
-			
-			static if(isTypeRStream!S){
-				@property{
-					ubyte read_ubyte(){return raw.read!ubyte;}
-					ushort read_ushort(){return raw.read!ushort;}
-					uint read_uint(){return raw.read!uint;}
-					ulong read_ulong(){return raw.read!ulong;}
-					byte read_byte(){return raw.read!byte;}
-					short read_short(){return raw.read!short;}
-					int read_int(){return raw.read!int;}
-					long read_long(){return raw.read!long;}
-					float read_float(){return raw.read!float;}
-					double read_double(){return raw.read!double;}
-				}
-				size_t readAr(ubyte[] a){return raw.readAr(a);}
-				size_t readAr(ushort[] a){return raw.readAr(a);}
-				size_t readAr(uint[] a){return raw.readAr(a);}
-				size_t readAr(ulong[] a){return raw.readAr(a);}
-				size_t readAr(byte[] a){return raw.readAr(a);}
-				size_t readAr(short[] a){return raw.readAr(a);}
-				size_t readAr(int[] a){return raw.readAr(a);}
-				size_t readAr(long[] a){return raw.readAr(a);}
-				size_t readAr(float[] a){return raw.readAr(a);}
-				size_t readAr(double[] a){return raw.readAr(a);}
-			}
+	class RStreamWrap:Par,RStreamInterfaceOf!(S){//need to find a better way to do this
+		private S raw;alias raw this;
+		this(S s){
+			raw=s;
 		}
+		size_t readFill(void[] b){return raw.readFill(b);}
+		size_t skip(size_t b){return raw.skip(b);}
+		@property size_t avail(){return raw.avail;}
+		@property bool eof(){return raw.eof;}
+		static if(isMarkableRStream!S){
+			@property typeof(this) save(){return new RStreamWrap(raw);}
+		}
+		
+		static if(isSeekableRStream!S){
+			@property size_t seek(){return raw.seek;}
+		}
+		
+		static if(isTypeRStream!S){
+			@property{
+				ubyte read_ubyte(){return raw.read!ubyte;}
+				ushort read_ushort(){return raw.read!ushort;}
+				uint read_uint(){return raw.read!uint;}
+				ulong read_ulong(){return raw.read!ulong;}
+				byte read_byte(){return raw.read!byte;}
+				short read_short(){return raw.read!short;}
+				int read_int(){return raw.read!int;}
+				long read_long(){return raw.read!long;}
+				float read_float(){return raw.read!float;}
+				double read_double(){return raw.read!double;}
+			}
+			size_t readAr(ubyte[] a){return raw.readAr(a);}
+			size_t readAr(ushort[] a){return raw.readAr(a);}
+			size_t readAr(uint[] a){return raw.readAr(a);}
+			size_t readAr(ulong[] a){return raw.readAr(a);}
+			size_t readAr(byte[] a){return raw.readAr(a);}
+			size_t readAr(short[] a){return raw.readAr(a);}
+			size_t readAr(int[] a){return raw.readAr(a);}
+			size_t readAr(long[] a){return raw.readAr(a);}
+			size_t readAr(float[] a){return raw.readAr(a);}
+			size_t readAr(double[] a){return raw.readAr(a);}
+		}
+		static if(isDisposeRStream!S){
+			@property void close(){raw.close;}
+		}
+	}
 }
 
 unittest{
@@ -200,7 +222,7 @@ unittest{
 		size_t skip(size_t p){return false;}
 		@property avail(){return 0;}
 		@property size_t seek(){return 0;}
-		@property bool empty(){return true;}
+		@property bool eof(){return true;}
 	}
 	auto cls=new RStreamWrap!(TestSeek)(TestSeek());
 	void[] temp;
@@ -226,7 +248,7 @@ unittest{//spesific unittest for TypeRStream
 		size_t readAr(T)(T[]){
 			return 0;
 		}
-		bool empty(){return true;}
+		bool eof(){return true;}
 	}
 	auto cls=new RStreamWrap!(TestType)(TestType());
 	ubyte a=cls.read!ubyte;
@@ -243,7 +265,6 @@ template RStreamInterfaceOf(S){//return interface of all streams that S supports
 template interFuse(T...){//fuse interfaces
 	interface interFuse:T{}
 }
-alias RStreamTur=TypeTuple!(RStream_,MarkableRStream_,SeekableRStream_,TypeRStream_);
 
 
 
@@ -283,7 +304,7 @@ struct MemRStream{
 		}
 		
 	}
-	@property bool empty(){
+	@property bool eof(){
 		return arr.length==0;
 	}
 	
@@ -311,7 +332,7 @@ unittest{
 	assert(4==s.skip(4));
 	assert(1==s.readFill(temp));
 	assert(temp[0]==200);
-	assert(s.empty);
+	assert(s.eof);
 }
 
 
@@ -325,14 +346,14 @@ class EofBadFormat:Exception{
 
 struct BigEndianRStream(S) if(isRStream!S){
 	import std.exception;
-	S stream;
+	S _stream;
 	this(S stream_){
-		stream=stream_;
+		_stream=stream_;
 	}
-	alias stream this;
+	alias _stream this;
 	@property T read(T)(){
 		ubyte buf[T.sizeof];
-		auto sz=stream.readFill(buf);
+		auto sz=_stream.readFill(buf);
 		if(sz!=T.sizeof){
 			throw new EofBadFormat();
 		}
@@ -343,18 +364,15 @@ struct BigEndianRStream(S) if(isRStream!S){
 	}
 	
 	size_t readAr(T)(T[] buf){
-		auto sz=stream.readFill(buf);
+		auto sz=_stream.readFill(buf);
 		if(sz==0||sz%T.sizeof!=0){
 			throw new EofBadFormat();
 		}
 		version(LittleEndian){
 			auto temp=cast(ubyte[]) buf;//templates errors are scary
 			uint count;
-			foreach(i;temp.chunks(T.sizeof).map!(a=>a.reverse)){
-				foreach(ii;i){
-					temp[count]=ii;
-					count++;
-				}
+			for(uint i=0;i<temp.length;i+=T.sizeof){
+				temp[i..i+T.sizeof].reverse;
 			}
 		}
 		return sz/T.sizeof;
@@ -366,10 +384,56 @@ unittest {
 	ubyte[12] buf=[0,0,1,0, 1,5,   0,1,  2,0, 1,3];
 	auto stream=BigEndianRStream!MemRStream(MemRStream(buf));
 	assert(stream.read!int==256);
-	assert(!stream.empty);
+	assert(!stream.eof);
 	assert(stream.read!ushort==261);
 	ushort[3] buf2;
 	assert(stream.readAr(buf2)==3);
-	assert(stream.empty);
+	assert(stream.eof);
 	assert(buf2==[1,512,259]);
+}
+
+struct RangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as a range
+	S _stream;
+	alias _stream this;
+	BufType[] _buf;
+	bool _eof;
+	
+	this(S s,BufType[] buf_){
+		_stream=s;
+		_buf=buf_;
+		popFront();
+	}
+	@property{
+		auto front(){
+			return cast(const (BufType)[])_buf;
+		}
+		
+		void popFront(){
+			auto len=_stream.readFill(_buf);
+			if(len!=_buf.length){
+				_eof=true;
+				_buf=_buf[0..len];
+			}
+		}
+		
+		bool empty(){
+			return _eof;
+		}
+	}
+}
+
+unittest{
+	ubyte[12] array=[0,0,1,0,1,5,0,1,2,0,1,3];
+	ubyte[4] buf=void;
+	auto chunker=RangeRStream!(MemRStream,ubyte)(MemRStream(array),buf);
+	assert(!chunker.empty);
+	assert(chunker.front==[0,0,1,0]);
+	chunker.popFront;
+	assert(chunker.front==[1,5,0,1]);
+	chunker.popFront;
+	assert(!chunker.empty);
+	assert(chunker.front==[2,0,1,3]);
+	chunker.popFront;
+	assert(chunker.empty);
+	assert(chunker.front==[]);
 }
