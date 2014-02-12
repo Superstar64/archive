@@ -2,10 +2,12 @@ module tpool.stream.rstream;
 import std.typetuple;
 import std.range;
 import std.algorithm;
+
+
 alias RStreamTur=TypeTuple!(RStream_,MarkableRStream_,SeekableRStream_,TypeRStream_,DisposeRStream_);
 
 //ReadStream
-interface RStream_{
+interface RStream_{//assigning or copying may make this stream invalid
 	size_t readFill(void[] buf);//reads as much as possible into buf, when the return val is not equal to buf.length ,eof is assumed
 	size_t skip(size_t len);//skips len bytes,returns bytes skiped, if the return val is not equal to buf.length, eof is assumed
 	@property size_t avail();//how many bytes can be read right now

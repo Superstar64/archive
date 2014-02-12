@@ -1,12 +1,13 @@
 module tpool.stream.wstream;
 import std.typetuple;
 import std.range;
-alias WStreamTur=TypeTuple!(WStream_,DisposeWStream_);
+alias WStreamTur=TypeTuple!(WStream_,TypeWStream_,DisposeWStream_);
+
 
 //generally you want a function that does all the flushing and closing calling the function that does all the writing
 
 //a writeable stream
-interface WStream_{
+interface WStream_{//assigning or copying may make this stream invalid
 	void writefill(const(void[]) buf);//fully write buf to output
 	template IS(S){
 		enum bool IS=isWStream!S;
@@ -24,6 +25,63 @@ unittest {
 	struct emp{};
 	static assert(!isWStream!emp);
 	static assert(isWStream!WStream_);
+}
+
+interface TypeWStream_:WStream_{
+	void write(in ubyte b);//writes b to stream
+	void write(in ushort b);//ditto used transform
+	void write(in uint b);//ditto used transform
+	void write(in ulong b);//ditto used transform
+	void write(in byte b);//ditto used transform
+	void write(in short b);//ditto used transform
+	void write(in int b);//ditto used transform
+	void write(in long b);//ditto used transform
+	void write(in float b);//ditto used transform
+	void write(in double b);//ditto used transform
+	
+	void writeAr(in ubyte[] b);//ditto used transform
+	void writeAr(in ushort[] b);//ditto used transform
+	void writeAr(in uint[] b);//ditto used transform
+	void writeAr(in ulong[] b);//ditto used transform
+	void writeAr(in byte[] b);//ditto used transform
+	void writeAr(in short[] b);//ditto used transform
+	void writeAr(in int[] b);//ditto used transform
+	void writeAr(in long[] b);//ditto used transform
+	void writeAr(in float[] b);//ditto used transform
+	void writeAr(in double[] b);//ditto used transform
+	template IS(S){
+		enum IS=isTypeWStream!S;
+	}
+}
+template isTypeWStream(S){
+	enum bool isTypeWStream=isWStream!S && is(typeof((inout int=0){
+		S s=void;
+		s.write(cast(ubyte)0);
+		s.write(cast(ushort)0);
+		s.write(cast(uint)0);
+		s.write(cast(ulong)0);
+		s.write(cast(byte)0);
+		s.write(cast(short)0);
+		s.write(cast(int)0);
+		s.write(cast(long)0);
+		s.write(cast(float)0);
+		s.write(cast(double)0);
+		void[] a=void;
+		s.writeAr(cast(ubyte[])a);
+		s.writeAr(cast(ushort[])a);
+		s.writeAr(cast(uint[])a);
+		s.writeAr(cast(ulong[])a);
+		s.writeAr(cast(byte[])a);
+		s.writeAr(cast(short[])a);
+		s.writeAr(cast(int[])a);
+		s.writeAr(cast(long[])a);
+		s.writeAr(cast(float[])a);
+		s.writeAr(cast(double[])a);
+	}));
+}
+unittest{
+	static assert(isTypeWStream!TypeWStream_);
+	static assert(!isTypeWStream!WStream_);
 }
 //a stream that can flush output and close
 interface DisposeWStream_:WStream_{
