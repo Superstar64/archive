@@ -47,14 +47,14 @@ unittest{
 
 //a stream that know exactly how much data is left
 interface SeekableRStream_:RStream_{
-	@property size_t seek();//returns exactly how much is left in the stream
+	@property ulong seek();//returns exactly how much is left in the stream
 	template IS(S){enum IS=isSeekableRStream!S;}
 }
 template isSeekableRStream(S){
 	enum bool isSeekableRStream=isRStream!(S) && 
 		is(typeof((inout int=0){
 			S s=void;
-			static assert(is(size_t==typeof(s.seek)));
+			static assert(is(ulong==typeof(s.seek)));
 		}));
 }
 unittest {
@@ -134,7 +134,7 @@ unittest{
 		size_t readFill(void[]){return 0;}
 		size_t skip(size_t p){return false;}
 		@property avail(){return 0;}
-		@property size_t seek(){return 0;}
+		@property ulong seek(){return 0;}
 		@property bool eof(){return true;}
 		@property auto read(T)(){
 			return cast(T)0;
@@ -165,54 +165,50 @@ unittest{
 	static assert(!isDisposeRStream!RStream_);
 	static assert(isDisposeRStream!DisposeRStream_);
 }
-
-template RStreamWrap(S,Par=Object){//wrap S in a class, usefull if you prefer virtual pointers over code duplication
-	static assert(isRStream!S);
-		
-	class RStreamWrap:Par,RStreamInterfaceOf!(S){//need to find a better way to do this
-		private S raw;alias raw this;
-		this(S s){
-			raw=s;
+//wrap S in a class, usefull if you prefer virtual pointers over code duplication
+class RStreamWrap(S,Par=Object):Par,RStreamInterfaceOf!(S){//need to find a better way to do this
+	private S raw;alias raw this;
+	this(S s){
+		raw=s;
+	}
+	size_t readFill(void[] b){return raw.readFill(b);}
+	size_t skip(size_t b){return raw.skip(b);}
+	@property size_t avail(){return raw.avail;}
+	@property bool eof(){return raw.eof;}
+	static if(isMarkableRStream!S){
+		@property typeof(this) save(){return new RStreamWrap(raw);}
+	}
+	
+	static if(isSeekableRStream!S){
+		@property ulong seek(){return raw.seek;}
+	}
+	
+	static if(isTypeRStream!S){
+		@property{
+			ubyte read_ubyte(){return raw.read!ubyte;}
+			ushort read_ushort(){return raw.read!ushort;}
+			uint read_uint(){return raw.read!uint;}
+			ulong read_ulong(){return raw.read!ulong;}
+			byte read_byte(){return raw.read!byte;}
+			short read_short(){return raw.read!short;}
+			int read_int(){return raw.read!int;}
+			long read_long(){return raw.read!long;}
+			float read_float(){return raw.read!float;}
+			double read_double(){return raw.read!double;}
 		}
-		size_t readFill(void[] b){return raw.readFill(b);}
-		size_t skip(size_t b){return raw.skip(b);}
-		@property size_t avail(){return raw.avail;}
-		@property bool eof(){return raw.eof;}
-		static if(isMarkableRStream!S){
-			@property typeof(this) save(){return new RStreamWrap(raw);}
-		}
-		
-		static if(isSeekableRStream!S){
-			@property size_t seek(){return raw.seek;}
-		}
-		
-		static if(isTypeRStream!S){
-			@property{
-				ubyte read_ubyte(){return raw.read!ubyte;}
-				ushort read_ushort(){return raw.read!ushort;}
-				uint read_uint(){return raw.read!uint;}
-				ulong read_ulong(){return raw.read!ulong;}
-				byte read_byte(){return raw.read!byte;}
-				short read_short(){return raw.read!short;}
-				int read_int(){return raw.read!int;}
-				long read_long(){return raw.read!long;}
-				float read_float(){return raw.read!float;}
-				double read_double(){return raw.read!double;}
-			}
-			size_t readAr(ubyte[] a){return raw.readAr(a);}
-			size_t readAr(ushort[] a){return raw.readAr(a);}
-			size_t readAr(uint[] a){return raw.readAr(a);}
-			size_t readAr(ulong[] a){return raw.readAr(a);}
-			size_t readAr(byte[] a){return raw.readAr(a);}
-			size_t readAr(short[] a){return raw.readAr(a);}
-			size_t readAr(int[] a){return raw.readAr(a);}
-			size_t readAr(long[] a){return raw.readAr(a);}
-			size_t readAr(float[] a){return raw.readAr(a);}
-			size_t readAr(double[] a){return raw.readAr(a);}
-		}
-		static if(isDisposeRStream!S){
-			@property void close(){raw.close;}
-		}
+		size_t readAr(ubyte[] a){return raw.readAr(a);}
+		size_t readAr(ushort[] a){return raw.readAr(a);}
+		size_t readAr(uint[] a){return raw.readAr(a);}
+		size_t readAr(ulong[] a){return raw.readAr(a);}
+		size_t readAr(byte[] a){return raw.readAr(a);}
+		size_t readAr(short[] a){return raw.readAr(a);}
+		size_t readAr(int[] a){return raw.readAr(a);}
+		size_t readAr(long[] a){return raw.readAr(a);}
+		size_t readAr(float[] a){return raw.readAr(a);}
+		size_t readAr(double[] a){return raw.readAr(a);}
+	}
+	static if(isDisposeRStream!S){
+		@property void close(){raw.close;}
 	}
 }
 
@@ -221,10 +217,10 @@ unittest{
 		size_t readFill(void[]){return 0;}
 		size_t skip(size_t p){return false;}
 		@property avail(){return 0;}
-		@property size_t seek(){return 0;}
+		@property ulong seek(){return 0;}
 		@property bool eof(){return true;}
 	}
-	auto cls=new RStreamWrap!(TestSeek)(TestSeek());
+	auto cls=new RStreamWrap(TestSeek());
 	void[] temp;
 	cls.readFill(temp);
 	cls.skip(0);
@@ -241,7 +237,7 @@ unittest{//spesific unittest for TypeRStream
 		size_t readFill(void[]){return 0;}
 		size_t skip(size_t p){return false;}
 		@property avail(){return 0;}
-		@property size_t seek(){return 0;}
+		@property ulong seek(){return 0;}
 		@property auto read(T)(){
 			return cast(T)0;
 		}
@@ -250,7 +246,7 @@ unittest{//spesific unittest for TypeRStream
 		}
 		bool eof(){return true;}
 	}
-	auto cls=new RStreamWrap!(TestType)(TestType());
+	auto cls=new RStreamWrap(TestType());
 	ubyte a=cls.read!ubyte;
 }
 
@@ -314,7 +310,7 @@ struct MemRStream{
 	
 	@property typeof(this) save(){return typeof(this)(arr);}
 	
-	@property size_t seek(){
+	@property ulong seek(){
 		return avail();
 	}
 }
@@ -335,6 +331,56 @@ unittest{
 	assert(s.eof);
 }
 
+
+struct FileRStream{
+	import std.stdio;
+	File file;
+	this(File file_){
+		file=file_;
+	}
+	size_t readFill(void[] buf){
+		auto s=file.rawRead(buf);
+		return s.length;
+	}
+	
+	@property{
+		size_t skip(size_t size){
+			import std.c.stdlib: alloca;
+			auto tem=alloca(size);
+			return readFill(tem[0..size]);
+		}
+		size_t avail(){
+			if (seek>size_t.max){
+				return size_t.max;
+			}
+			return cast(size_t) seek();
+		}
+		bool eof(){
+			return file.eof;
+		}
+		
+		void close(){
+			file.close;
+		}
+		
+		auto seek(){
+			return file.size;
+		}
+	}
+}
+unittest {
+	static assert(isDisposeRStream!FileRStream);
+	
+	debug(rstream_file){
+		import std.stdio;
+		auto fs=new RStreamWrap!FileRStream(FileRStream(stdin));
+		ubyte buf[16];
+		while(true){
+			writeln(fs.readFill(buf));
+			writeln(buf);
+		}
+	}
+}
 
 //stream containers
 
