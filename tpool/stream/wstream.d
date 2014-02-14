@@ -193,7 +193,7 @@ unittest{
 
 
 
-struct BigEndianWStream(S){
+struct BigEndianWStream(S) if(isWStream!S){
 	S stream;
 	this(S s){
 		stream=s;
@@ -226,7 +226,7 @@ unittest{
 	s.writeAr(cast(ushort[])[1,3]);
 	assert((cast(ubyte[])s.stream.array)==(cast(ubyte[])[0,10,0,1,0,3]));
 }
-struct RangeWStream(S){
+struct RangeWStream(S) if(isWStream!S){
 	S stream;
 	this(S s){
 		stream=s;
