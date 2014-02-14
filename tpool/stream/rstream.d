@@ -173,41 +173,43 @@ class RStreamWrap(S,Par=Object):Par,RStreamInterfaceOf!(S){//need to find a bett
 	this(S s){
 		raw=s;
 	}
-	size_t readFill(void[] b){return raw.readFill(b);}
-	size_t skip(size_t b){return raw.skip(b);}
-	@property size_t avail(){return raw.avail;}
-	@property bool eof(){return raw.eof;}
-	static if(isMarkableRStream!S){
-		@property typeof(this) save(){return new RStreamWrap(raw);}
-	}
-	
-	static if(isSeekableRStream!S){
-		@property ulong seek(){return raw.seek;}
-	}
-	
-	static if(isTypeRStream!S){
-		@property{
-			ubyte read_ubyte(){return raw.read!ubyte;}
-			ushort read_ushort(){return raw.read!ushort;}
-			uint read_uint(){return raw.read!uint;}
-			ulong read_ulong(){return raw.read!ulong;}
-			byte read_byte(){return raw.read!byte;}
-			short read_short(){return raw.read!short;}
-			int read_int(){return raw.read!int;}
-			long read_long(){return raw.read!long;}
-			float read_float(){return raw.read!float;}
-			double read_double(){return raw.read!double;}
+	override{
+		size_t readFill(void[] b){return raw.readFill(b);}
+		size_t skip(size_t b){return raw.skip(b);}
+		@property size_t avail(){return raw.avail;}
+		@property bool eof(){return raw.eof;}
+		static if(isMarkableRStream!S){
+			@property typeof(this) save(){return new RStreamWrap(raw);}
 		}
-		size_t readAr(ubyte[] a){return raw.readAr(a);}
-		size_t readAr(ushort[] a){return raw.readAr(a);}
-		size_t readAr(uint[] a){return raw.readAr(a);}
-		size_t readAr(ulong[] a){return raw.readAr(a);}
-		size_t readAr(byte[] a){return raw.readAr(a);}
-		size_t readAr(short[] a){return raw.readAr(a);}
-		size_t readAr(int[] a){return raw.readAr(a);}
-		size_t readAr(long[] a){return raw.readAr(a);}
-		size_t readAr(float[] a){return raw.readAr(a);}
-		size_t readAr(double[] a){return raw.readAr(a);}
+		
+		static if(isSeekableRStream!S){
+			@property ulong seek(){return raw.seek;}
+		}
+		
+		static if(isTypeRStream!S){
+			@property{
+				ubyte read_ubyte(){return raw.read!ubyte;}
+				ushort read_ushort(){return raw.read!ushort;}
+				uint read_uint(){return raw.read!uint;}
+				ulong read_ulong(){return raw.read!ulong;}
+				byte read_byte(){return raw.read!byte;}
+				short read_short(){return raw.read!short;}
+				int read_int(){return raw.read!int;}
+				long read_long(){return raw.read!long;}
+				float read_float(){return raw.read!float;}
+				double read_double(){return raw.read!double;}
+			}
+			size_t readAr(ubyte[] a){return raw.readAr(a);}
+			size_t readAr(ushort[] a){return raw.readAr(a);}
+			size_t readAr(uint[] a){return raw.readAr(a);}
+			size_t readAr(ulong[] a){return raw.readAr(a);}
+			size_t readAr(byte[] a){return raw.readAr(a);}
+			size_t readAr(short[] a){return raw.readAr(a);}
+			size_t readAr(int[] a){return raw.readAr(a);}
+			size_t readAr(long[] a){return raw.readAr(a);}
+			size_t readAr(float[] a){return raw.readAr(a);}
+			size_t readAr(double[] a){return raw.readAr(a);}
+		}
 	}
 	static if(isDisposeRStream!S){
 		@property void close(){raw.close;}
@@ -394,14 +396,14 @@ class EofBadFormat:Exception{
 
 struct BigEndianRStream(S) if(isRStream!S){
 	import std.exception;
-	S _stream;
+	S stream;
 	this(S stream_){
-		_stream=stream_;
+		stream=stream_;
 	}
-	alias _stream this;
+	alias stream this;
 	@property T read(T)(){
 		ubyte buf[T.sizeof];
-		auto sz=_stream.readFill(buf);
+		auto sz=stream.readFill(buf);
 		if(sz!=T.sizeof){
 			throw new EofBadFormat();
 		}
@@ -412,7 +414,7 @@ struct BigEndianRStream(S) if(isRStream!S){
 	}
 	
 	size_t readAr(T)(T[] buf){
-		auto sz=_stream.readFill(buf);
+		auto sz=stream.readFill(buf);
 		if(sz==0||sz%T.sizeof!=0){
 			throw new EofBadFormat();
 		}
@@ -441,13 +443,13 @@ unittest {
 }
 
 struct RangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as a range
-	S _stream;
-	alias _stream this;
+	S stream;
+	alias stream this;
 	BufType[] _buf;
 	bool _eof;
 	
 	this(S s,BufType[] buf_){
-		_stream=s;
+		stream=s;
 		_buf=buf_;
 		popFront();
 	}
@@ -457,7 +459,7 @@ struct RangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as
 		}
 		
 		void popFront(){
-			auto len=_stream.readFill(_buf);
+			auto len=stream.readFill(_buf);
 			if(len!=_buf.length){
 				_eof=true;
 				_buf=_buf[0..len];
