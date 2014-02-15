@@ -2,7 +2,7 @@ module tpool.stream.wstream;
 import std.typetuple;
 import std.range;
 import std.c.stdlib : alloca;//i'm dangerous
-alias WStreamTur=TypeTuple!(WStream_,TypeWStream_,DisposeWStream_);
+alias WStreamTur=TypeTuple!(WStream_,TypeWStream_,DisposeWStream_,StringWStream_);
 
 
 //generally you want a function that does all the flushing and closing calling the function that does all the writing
@@ -27,7 +27,7 @@ unittest {
 	static assert(!isWStream!emp);
 	static assert(isWStream!WStream_);
 }
-
+//typed stream, you can write spesific types
 interface TypeWStream_:WStream_{
 	void write(ubyte b);//writes b to stream
 	void write(ushort b);//ditto used transform
@@ -106,6 +106,34 @@ unittest {
 	static assert(!isDisposeWStream!WStream_);
 	static assert(isDisposeWStream!DisposeWStream_);
 }
+//write string to a stream
+interface StringWStream_:WStream_{
+	void write(char c);//writes c to the steam
+	void write(wchar c);//ditto use transform
+	void write(dchar c);//ditto use transform
+	void writeAr(in char[] c);//ditto use transform
+	void writeAr(in wchar[] c);//ditto use transform
+	void writeAr(in dchar[] c);//ditto use transform
+	template IS(S){
+		enum IS=isStringWStream!S;
+	}
+}
+template isStringWStream(S){
+	enum bool isStringWStream=isWStream!S&& is(typeof((inout int=0){
+		S s=void;
+		s.write(cast(char)0);
+		s.write(cast(wchar)0);
+		s.write(cast(dchar)0);
+		void[] a=void;
+		s.writeAr(cast(const char[])a);
+		s.writeAr(cast(const wchar[])a);
+		s.writeAr(cast(const dchar[])a);
+	}));
+}
+unittest{
+	static assert(isStringWStream!StringWStream_);
+	static assert(!isStringWStream!WStream_);
+}
 //Wraps s in a class usefull for virtual pointers
 class WStreamWrap(S,Par=Object):Par,WStreamInterfaceOf!S{
 	private S raw;alias raw this;
@@ -114,9 +142,40 @@ class WStreamWrap(S,Par=Object):Par,WStreamInterfaceOf!S{
 	}
 	override{
 		void writeFill(const void[] buf){raw.writeFill(buf);}
+		static if(isTypeWStream!S){
+			void write(ubyte b){raw.write(b);}
+			void write(ushort b){raw.write(b);}
+			void write(uint b){raw.write(b);}
+			void write(ulong b){raw.write(b);}
+			void write(byte b){raw.write(b);}
+			void write(short b){raw.write(b);}
+			void write(int b){raw.write(b);}
+			void write(long b){raw.write(b);}
+			void write(float b){raw.write(b);}
+			void write(double b){raw.write(b);}
+			
+			void writeAr(in ubyte[] b){raw.writeAr(b);}
+			void writeAr(in ushort[] b){raw.writeAr(b);}
+			void writeAr(in uint[] b){raw.writeAr(b);}
+			void writeAr(in ulong[] b){raw.writeAr(b);}
+			void writeAr(in byte[] b){raw.writeAr(b);}
+			void writeAr(in short[] b){raw.writeAr(b);}
+			void writeAr(in int[] b){raw.writeAr(b);}
+			void writeAr(in long[] b){raw.writeAr(b);}
+			void writeAr(in float[] b){raw.writeAr(b);}
+			void writeAr(in double[] b){raw.writeAr(b);}
+		}
 		static if(isDisposeWStream!S){
 			void flush(){raw.flush();}
 			void close(){raw.close();}
+		}
+		static if(isStringWStream!S){
+			void write(char b){raw.write(b);}
+			void write(wchar b){raw.write(b);}
+			void write(dchar b){raw.write(b);}
+			void writeAr(in char[] b){raw.writeAr(b);}
+			void writeAr(in wchar[] b){raw.writeAr(b);}
+			void writeAr(in dchar[] b){raw.writeAr(b);}
 		}
 	}
 }
