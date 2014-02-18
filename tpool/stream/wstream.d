@@ -2,6 +2,7 @@ module tpool.stream.wstream;
 import std.typetuple;
 import std.range;
 import std.c.stdlib : alloca;//i'm dangerous
+import tpool.stream.common;
 alias WStreamTur=TypeTuple!(WStream_,TypeWStream_,DisposeWStream_,StringWStream_);
 
 
@@ -200,10 +201,6 @@ template WStreamInterfaceOf(S){//return interface of all streams that S supports
 		enum I=A.IS!(S);
 	}
 	alias WStreamInterfaceOf=interFuse!(Filter!(I,WStreamTur));
-}
-
-template interFuse(T...){//fuse interfaces
-	interface interFuse:T{}
 }
 
 

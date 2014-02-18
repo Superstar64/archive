@@ -2,7 +2,7 @@ module tpool.stream.rstream;
 import std.typetuple;
 import std.range;
 import std.algorithm;
-
+import tpool.stream.common;
 
 alias RStreamTur=TypeTuple!(RStream_,MarkableRStream_,SeekableRStream_,TypeRStream_,DisposeRStream_,StringRStream_);
 
@@ -302,11 +302,6 @@ template RStreamInterfaceOf(S){//return interface of all streams that S supports
 		enum I=A.IS!(S);
 	}
 	alias RStreamInterfaceOf=interFuse!(Filter!(I,RStreamTur));
-}
-
-
-template interFuse(T...){//fuse interfaces
-	interface interFuse:T{}
 }
 
 
