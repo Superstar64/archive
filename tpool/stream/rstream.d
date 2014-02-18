@@ -527,7 +527,7 @@ unittest {
 	assert(stream.readAr(buf2)==3);
 	assert(stream.eof);
 	assert(buf2==[1,512,259]);
-}void main(){}
+}
 
 struct RangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as a range
 	S stream;
