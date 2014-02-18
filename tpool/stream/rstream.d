@@ -480,6 +480,55 @@ unittest {
 	assert(buf2==[1,512,259]);
 }
 
+
+struct LittleEndianRStream(S) if(isRStream!S){
+	import std.exception;
+	S stream;
+	this(S stream_){
+		stream=stream_;
+	}
+	alias stream this;
+	@property T read(T)(){
+		ubyte buf[T.sizeof];
+		auto sz=stream.readFill(buf);
+		if(sz!=T.sizeof){
+			throw new EofBadFormat();
+		}
+		version(BigEndian){
+			buf.reverse;
+		}
+		return *(cast(T*)buf.ptr);
+	}
+	
+	size_t readAr(T)(T[] buf){
+		auto sz=stream.readFill(buf);
+		if(sz==0||sz%T.sizeof!=0){
+			throw new EofBadFormat();
+		}
+		version(BigEndian){
+			auto temp=cast(ubyte[]) buf;//templates errors are scary
+			uint count;
+			for(uint i=0;i<temp.length;i+=T.sizeof){
+				temp[i..i+T.sizeof].reverse;
+			}
+		}
+		return sz/T.sizeof;
+	}
+	
+}
+
+unittest {
+	ubyte[12] buf=[0,1,0,0, 5,1,   1,0,  0,2, 3,1];
+	auto stream=LittleEndianRStream!MemRStream(MemRStream(buf));
+	assert(stream.read!int==256);
+	assert(!stream.eof);
+	assert(stream.read!ushort==261);
+	ushort[3] buf2;
+	assert(stream.readAr(buf2)==3);
+	assert(stream.eof);
+	assert(buf2==[1,512,259]);
+}void main(){}
+
 struct RangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as a range
 	S stream;
 	alias stream this;

@@ -282,6 +282,42 @@ unittest{
 	s.writeAr(cast(ushort[])[1,3]);
 	assert((cast(ubyte[])s.stream.array)==(cast(ubyte[])[0,10,0,1,0,3]));
 }
+
+struct LittleEndianWStream(S) if(isWStream!S){
+	S stream;
+	this(S s){
+		stream=s;
+	}
+	void write(T)(T t){
+		version(BigEndian){
+			(cast(void*)(&t))[0..T.sizeof].reverse;
+		}
+		stream.writeFill((cast(void*)(&t))[0..T.sizeof]);
+	}
+	
+	void writeAr(T)(in T[] t){
+		version(BigEndian){//allaca and reverse
+			auto length=T.sizeof*t.length;
+			auto ptr=cast(ubyte*)alloca(length);
+			for(uint i=0;i<length;i+=T.sizeof){
+				foreach(val;0..T.sizeof){
+					ptr[i+val]=(cast(ubyte[])t)[i+(T.sizeof-1-val)];
+				}
+			}
+			stream.writeFill(ptr[0..length]);
+			return;
+		}
+		stream.writeFill(t);
+	}
+}
+unittest{
+	auto s=LittleEndianWStream!MemWStream(MemWStream());
+	s.write(cast(ushort)10);
+	s.writeAr(cast(ushort[])[1,3]);
+	assert((cast(ubyte[])s.stream.array)==(cast(ubyte[])[10,0,1,0,3,0]));
+}
+
+
 struct RangeWStream(S) if(isWStream!S){
 	S stream;
 	this(S s){
