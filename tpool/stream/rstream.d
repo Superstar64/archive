@@ -3,7 +3,7 @@ import std.typetuple;
 import std.range;
 import std.algorithm;
 import tpool.stream.common;
-
+import std.math;
 alias RStreamTur=TypeTuple!(RStream_,MarkableRStream_,SeekableRStream_,TypeRStream_,DisposeRStream_,StringRStream_);
 
 //ReadStream
@@ -471,6 +471,7 @@ struct BigEndianRStream(S) if(isRStream!S){
 unittest {
 	ubyte[12] buf=[0,0,1,0, 1,5,   0,1,  2,0, 1,3];
 	auto stream=BigEndianRStream!MemRStream(MemRStream(buf));
+	static assert(isTypeRStream!(typeof(stream)));
 	assert(stream.read!int==256);
 	assert(!stream.eof);
 	assert(stream.read!ushort==261);
@@ -520,6 +521,7 @@ struct LittleEndianRStream(S) if(isRStream!S){
 unittest {
 	ubyte[12] buf=[0,1,0,0, 5,1,   1,0,  0,2, 3,1];
 	auto stream=LittleEndianRStream!MemRStream(MemRStream(buf));
+	static assert(isTypeRStream!(typeof(stream)));
 	assert(stream.read!int==256);
 	assert(!stream.eof);
 	assert(stream.read!ushort==261);
@@ -527,6 +529,85 @@ unittest {
 	assert(stream.readAr(buf2)==3);
 	assert(stream.eof);
 	assert(buf2==[1,512,259]);
+}
+
+class EofBeforeLength:Exception{
+	this(size_t read){
+		super("Eof reached before limit");
+	}
+}
+struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, return eof when limit bytes are read
+															//if excepOnEof is true, it throws if eof is reached before limit
+	S stream;
+	ulong limit;
+	this(S s,ulong limit_){
+		stream=s;
+		limit=limit_;
+	}
+	size_t readFill(void[] buf){
+		if(buf.length>limit){
+			auto len=stream.readFill(buf[0..cast(size_t)limit]);
+			static if(excepOnEof){
+				if(len!=limit){
+					throw new EofBeforeLength(cast(size_t)limit);
+				}
+			}
+			limit=0;
+			return len;
+		}else{
+			auto len=stream.readFill(buf);
+			static if(excepOnEof){
+				if(len!=buf.length){
+					throw new EofBeforeLength(len);
+				}
+			}
+			limit-=len;
+			return len;
+		}
+	}
+	
+	size_t skip(size_t amount){
+		if(amount>limit){
+			auto len=stream.skip(cast(size_t)limit);
+			static if(excepOnEof){
+				if(len!=limit){
+					throw new EofBeforeLength(cast(size_t)limit);
+				}
+			}
+			limit=0;
+			return len;
+		}else{
+			auto len=stream.skip(amount);
+			static if(excepOnEof){
+				if(len!=amount){
+					throw new EofBeforeLength(cast(size_t) amount);
+				}
+			}
+			limit-=len;
+			return len;
+		}
+	}
+	@property{
+		size_t avail(){
+			auto av=stream.avail();
+			return min(av,limit);
+		}
+		
+		bool eof(){
+			return limit==0;
+		}
+	}
+}
+unittest {//todo unittest skip
+	ubyte[12] buf=[0,1,0,0, 5,1,   1,0,  0,2, 3,1];
+	auto stream=LimitRStream!MemRStream(MemRStream(buf),4);
+	static assert(isRStream!(typeof(stream)));
+	ubyte[3] temp;
+	auto len=stream.readFill(temp);
+	assert(len==3);
+	len=stream.readFill(temp);
+	assert(len==1);
+	assert(stream.eof);
 }
 
 struct RangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as a range
