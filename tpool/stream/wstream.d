@@ -318,10 +318,21 @@ unittest{
 }
 
 
-struct RangeWStream(S) if(isWStream!S){
+struct WStreamRange(S) if(isWStream!S){//converts a wstream into a range
 	S stream;
 	this(S s){
 		stream=s;
 	}
 	void put(void[] buf){s.writeFill(buf);}
 }
+
+struct RangeWStream(R) if(isOutputRange!R){//converts a range to a wstream
+	R range;
+	this(R r){
+		range=r;
+	}
+	void writeFill(void[] buf){
+		range.put(buf);
+	}
+}
+
