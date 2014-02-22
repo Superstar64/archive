@@ -336,3 +336,50 @@ struct RangeWStream(R) if(isOutputRange!R){//converts a range to a wstream
 	}
 }
 
+struct MultiPipeWStream(S...){//pipe single write stream to mulitple,
+//todo static if for other type of streams
+	S streams;
+	this(S s){
+		streams=s;
+	}
+	void writeFill(in void[] buf){
+		foreach(i;streams){
+			i.writeFill(buf);
+		}
+	}
+	static if(allSatisfy!(isTypeWStream,S)||allSatisfy!(isStringWStream,S)){
+		void write(T)(T t){
+			foreach(i;streams){
+				i.write(t);
+			}
+		}
+
+		void writeAr(T)(in T[] t){
+			foreach(i;streams){
+				i.writeAr(t);
+			}
+		}
+	}
+	static if(allSatisfy!(isDisposeWStream,S)){
+		@property{
+			void flush(){
+				foreach(i;streams){
+					i.flush;
+				}
+			}
+			
+			void close(){
+				foreach(i;streams){
+					i.close;
+				}
+			}
+		}
+	}
+}
+unittest{
+	auto stream=MultiPipeWStream!(MemWStream)(MemWStream());
+	void[] temp;
+	stream.writeFill(temp);
+	static assert(isWStream!(typeof(stream)));
+	static assert(!isTypeWStream!((typeof(stream))));
+}
