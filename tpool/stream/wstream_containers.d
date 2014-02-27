@@ -136,3 +136,22 @@ unittest{
 	static assert(isWStream!(typeof(stream)));
 	static assert(!isTypeWStream!((typeof(stream))));
 }
+
+struct CountWStream(S) if(isWStream!S){
+	ulong len;
+	S stream;
+	this(S stream_){
+		stream=stream_;
+	}
+	auto writeFill(const void[] buf){
+		len+=buf.length;
+		return stream.writeFill(buf);
+	}
+	
+}
+unittest {
+	static assert(isWStream!(CountWStream!VoidWStream));
+	auto stream=LittleEndianWStream!(CountWStream!MemWStream)(CountWStream!MemWStream(MemWStream()));
+	stream.write(cast(int)5);
+	assert (stream.stream.len==5);
+}
