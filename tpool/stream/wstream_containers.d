@@ -153,5 +153,5 @@ unittest {
 	static assert(isWStream!(CountWStream!VoidWStream));
 	auto stream=LittleEndianWStream!(CountWStream!MemWStream)(CountWStream!MemWStream(MemWStream()));
 	stream.write(cast(int)5);
-	assert (stream.stream.len==5);
-}
+	assert(stream.stream.len==4);
+}void main(){}
