@@ -94,7 +94,7 @@ struct FileRStream{
 		}
 		
 		auto seek(){
-			return file.size;
+			return file.size-file.tell;
 		}
 	}
 }
