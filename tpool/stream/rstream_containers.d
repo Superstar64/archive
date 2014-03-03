@@ -1,5 +1,7 @@
 module tpool.stream.rstream_containers;
 import tpool.stream.rstream;
+import tpool.stream.common;
+
 import std.algorithm;
 class EofBadFormat:Exception{
 	this(){
@@ -14,7 +16,7 @@ struct BigEndianRStream(S) if(isRStream!S){
 		stream=stream_;
 	}
 	alias stream this;
-	@property T read(T)(){
+	@property T read(T)() if(isDataType!T) {
 		ubyte buf[T.sizeof];
 		auto sz=stream.readFill(buf);
 		if(sz!=T.sizeof){
@@ -26,7 +28,7 @@ struct BigEndianRStream(S) if(isRStream!S){
 		return *(cast(T*)buf.ptr);
 	}
 	
-	size_t readAr(T)(T[] buf){
+	size_t readAr(T)(T[] buf) if(isDataType!T) {
 		auto sz=stream.readFill(buf);
 		if(sz==0||sz%T.sizeof!=0){
 			throw new EofBadFormat();
@@ -64,7 +66,7 @@ struct LittleEndianRStream(S) if(isRStream!S){
 		stream=stream_;
 	}
 	alias stream this;
-	@property T read(T)(){
+	@property T read(T)() if(isDataType!T) {
 		ubyte buf[T.sizeof];
 		auto sz=stream.readFill(buf);
 		if(sz!=T.sizeof){
@@ -76,7 +78,7 @@ struct LittleEndianRStream(S) if(isRStream!S){
 		return *(cast(T*)buf.ptr);
 	}
 	
-	size_t readAr(T)(T[] buf){
+	size_t readAr(T)(T[] buf) if(isDataType!T) {
 		auto sz=stream.readFill(buf);
 		if(sz==0||sz%T.sizeof!=0){
 			throw new EofBadFormat();

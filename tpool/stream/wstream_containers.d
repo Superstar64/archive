@@ -1,5 +1,6 @@
 module tpool.stream.wstream_containers;
 import tpool.stream.wstream;
+import tpool.stream.common;
 import std.c.stdlib : alloca;//i'm dangerous
 import std.typetuple;
 struct BigEndianWStream(S) if(isWStream!S){
@@ -7,14 +8,14 @@ struct BigEndianWStream(S) if(isWStream!S){
 	this(S s){
 		stream=s;
 	}
-	void write(T)(T t){
+	void write(T)(T t) if(isDataType!T){
 		version(LittleEndian){
 			(cast(void*)(&t))[0..T.sizeof].reverse;
 		}
 		stream.writeFill((cast(void*)(&t))[0..T.sizeof]);
 	}
 	
-	void writeAr(T)(in T[] t){
+	void writeAr(T)(in T[] t) if(isDataType!T){
 		version(LittleEndian){//allaca and reverse
 			auto length=T.sizeof*t.length;
 			auto ptr=cast(ubyte*)alloca(length);
@@ -41,14 +42,14 @@ struct LittleEndianWStream(S) if(isWStream!S){
 	this(S s){
 		stream=s;
 	}
-	void write(T)(T t){
+	void write(T)(T t) if(isDataType!T){
 		version(BigEndian){
 			(cast(void*)(&t))[0..T.sizeof].reverse;
 		}
 		stream.writeFill((cast(void*)(&t))[0..T.sizeof]);
 	}
 	
-	void writeAr(T)(in T[] t){
+	void writeAr(T)(in T[] t) if(isDataType!T){
 		version(BigEndian){//allaca and reverse
 			auto length=T.sizeof*t.length;
 			auto ptr=cast(ubyte*)alloca(length);
