@@ -1,7 +1,7 @@
 module tpool.stream.rstream_containers;
 import tpool.stream.rstream;
 import tpool.stream.common;
-
+import std.exception:enforce;
 import std.algorithm;
 class EofBadFormat:Exception{
 	this(){
@@ -223,3 +223,28 @@ unittest{
 	assert(chunker.front==[]);
 }
 
+struct AllRStream(S) if(isRStream!S) {//a stream that throws a exception when a buffer is not fully filled
+	S s;//stream
+	alias s this;
+	size_t readFill(void[] buf){
+		enforce(s.readFill(buf)==buf.length);
+		return buf.length;
+	}
+	
+	size_t skip(size_t si){
+		enforce(s.skip(si)==si);
+		return si;
+	}
+}
+unittest{
+	ubyte[7] buf;
+	auto str= BigEndianRStream!(AllRStream!MemRStream)(AllRStream!MemRStream(MemRStream(buf)));
+	str.read!uint;
+	bool a=false;
+	try{
+		str.read!uint;
+	}catch(Exception e){
+		a=true;
+	}
+	assert(a);
+}void main(){}
