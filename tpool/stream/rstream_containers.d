@@ -12,9 +12,6 @@ class EofBadFormat:Exception{
 struct BigEndianRStream(S) if(isRStream!S){
 	import std.exception;
 	S stream;
-	this(S stream_){
-		stream=stream_;
-	}
 	alias stream this;
 	@property T read(T)() if(isDataType!T) {
 		ubyte buf[T.sizeof];
@@ -62,9 +59,6 @@ unittest {
 struct LittleEndianRStream(S) if(isRStream!S){
 	import std.exception;
 	S stream;
-	this(S stream_){
-		stream=stream_;
-	}
 	alias stream this;
 	@property T read(T)() if(isDataType!T) {
 		ubyte buf[T.sizeof];
@@ -117,10 +111,6 @@ struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, r
 															//if excepOnEof is true, it throws if eof is reached before limit
 	S stream;
 	ulong limit;
-	this(S s,ulong limit_){
-		stream=s;
-		limit=limit_;
-	}
 	size_t readFill(void[] buf){
 		if(buf.length>limit){
 			auto len=stream.readFill(buf[0..cast(size_t)limit]);
@@ -232,3 +222,4 @@ unittest{
 	assert(chunker.empty);
 	assert(chunker.front==[]);
 }
+

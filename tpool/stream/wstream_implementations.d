@@ -3,9 +3,6 @@ import tpool.stream.wstream;
 struct FileWStream{
 	import std.stdio;
 	File file;
-	this(File file_){
-		file=file_;
-	}
 	
 	void writeFill(void[] buf){
 		file.rawWrite(buf);

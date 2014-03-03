@@ -5,9 +5,6 @@ import std.c.stdlib : alloca;//i'm dangerous
 import std.typetuple;
 struct BigEndianWStream(S) if(isWStream!S){
 	S stream;
-	this(S s){
-		stream=s;
-	}
 	void write(T)(T t) if(isDataType!T){
 		version(LittleEndian){
 			(cast(void*)(&t))[0..T.sizeof].reverse;
@@ -39,9 +36,6 @@ unittest{
 
 struct LittleEndianWStream(S) if(isWStream!S){
 	S stream;
-	this(S s){
-		stream=s;
-	}
 	void write(T)(T t) if(isDataType!T){
 		version(BigEndian){
 			(cast(void*)(&t))[0..T.sizeof].reverse;
@@ -74,17 +68,11 @@ unittest{
 
 struct WStreamRange(S) if(isWStream!S){//converts a wstream into a range
 	S stream;
-	this(S s){
-		stream=s;
-	}
 	void put(void[] buf){s.writeFill(buf);}
 }
 
 struct RangeWStream(R) if(isOutputRange!R){//converts a range to a wstream
 	R range;
-	this(R r){
-		range=r;
-	}
 	void writeFill(void[] buf){
 		range.put(buf);
 	}
@@ -93,9 +81,6 @@ struct RangeWStream(R) if(isOutputRange!R){//converts a range to a wstream
 struct MultiPipeWStream(S...){//pipe single write stream to mulitple,
 //todo static if for other type of streams
 	S streams;
-	this(S s){
-		streams=s;
-	}
 	void writeFill(in void[] buf){
 		foreach(i;streams){
 			i.writeFill(buf);
@@ -139,11 +124,9 @@ unittest{
 }
 
 struct CountWStream(S) if(isWStream!S){
-	ulong len;
 	S stream;
-	this(S stream_){
-		stream=stream_;
-	}
+	ulong len;
+	
 	auto writeFill(const void[] buf){
 		len+=buf.length;
 		return stream.writeFill(buf);

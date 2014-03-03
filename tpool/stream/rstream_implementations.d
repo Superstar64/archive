@@ -3,9 +3,6 @@ import tpool.stream.rstream;
 struct MemRStream{
 	import std.c.string;
 	const(void)[] arr;
-	this(typeof(arr) mem){
-		arr=mem;
-	}
 	size_t readFill(void[] buf){
 		if(buf.length>=arr.length){
 			memcpy(buf.ptr,arr.ptr,arr.length);
@@ -65,9 +62,6 @@ unittest{
 struct FileRStream{
 	import std.stdio;
 	File file;
-	this(File file_){
-		file=file_;
-	}
 	size_t readFill(void[] buf){
 		auto s=file.rawRead(buf);
 		return s.length;
