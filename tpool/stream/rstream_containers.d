@@ -247,4 +247,4 @@ unittest{
 		a=true;
 	}
 	assert(a);
-}void main(){}
+}
