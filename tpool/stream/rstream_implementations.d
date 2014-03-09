@@ -31,14 +31,11 @@ struct MemRStream{
 		return arr.length==0;
 	}
 	
-	@property size_t avail(){
-		return arr.length;
-	}
 	
 	@property typeof(this) save(){return typeof(this)(arr);}
 	
 	@property ulong seek(){
-		return avail();
+		return arr.length;
 	}
 }
 
@@ -50,7 +47,6 @@ unittest{
 	ubyte[2] temp;
 	assert(2==s.readFill(temp));
 	assert(5==s.seek);
-	assert(5==s.avail);
 	assert(temp==[1,5]);
 	assert(4==s.skip(4));
 	assert(1==s.readFill(temp));
@@ -69,16 +65,17 @@ struct FileRStream{
 	
 	@property{
 		size_t skip(size_t size){
-			import std.c.stdlib: alloca;
-			auto tem=alloca(size);
-			return readFill(tem[0..size]);
-		}
-		size_t avail(){
-			if (seek>size_t.max){
-				return size_t.max;
+			auto sz=file.size;
+			auto cr=file.tell;
+			if(cr+size>sz){
+				file.seek(sz);
+				return cast(size_t)(size-cr);
+			}else{
+				file.seek(size,SEEK_CUR);
+				return size;
 			}
-			return cast(size_t) seek();
 		}
+		
 		bool eof(){
 			return file.eof;
 		}
@@ -97,11 +94,12 @@ unittest {
 	
 	debug(rstream_file){
 		import std.stdio;
-		auto fs=new RStreamWrap!FileRStream(FileRStream(stdin));
+		auto fs=new RStreamWrap!FileRStream(FileRStream(File("Test.txt")));
 		ubyte buf[16];
 		while(true){
 			writeln(fs.readFill(buf));
 			writeln(buf);
+			fs.skip(16);
 		}
 	}
 }

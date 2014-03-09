@@ -12,7 +12,6 @@ alias RStreamTur=TypeTuple!(RStream_,MarkableRStream_,SeekableRStream_,TypeRStre
 interface RStream_{//assigning or copying may make this stream invalid
 	size_t readFill(void[] buf);//reads as much as possible into buf, when the return val is not equal to buf.length ,eof is assumed
 	size_t skip(size_t len);//skips len bytes,returns bytes skiped, if the return val is not equal to buf.length, eof is assumed
-	@property size_t avail();//how many bytes can be read right now
 	@property bool eof();//i want you to guess what this returns
 	template IS(S){enum IS=isRStream!S;}
 }
@@ -22,7 +21,6 @@ template isRStream(S){// thanks for std.range for nice exapmle code of this
 		
 		size_t len=s.readFill(a);
 		size_t le=s.skip(b);
-		size_t av=s.avail;
 		bool end=s.eof;
 	}));
 }
@@ -137,7 +135,6 @@ unittest{
 	struct TestType{
 		size_t readFill(void[]){return 0;}
 		size_t skip(size_t p){return false;}
-		@property avail(){return 0;}
 		@property ulong seek(){return 0;}
 		@property bool eof(){return true;}
 		@property auto read(T)(){
@@ -211,7 +208,6 @@ class RStreamWrap(S,Par=Object):Par,RStreamInterfaceOf!(S) {//need to find a bet
 	override{
 		size_t readFill(void[] b){return raw.readFill(b);}
 		size_t skip(size_t b){return raw.skip(b);}
-		@property size_t avail(){return raw.avail;}
 		@property bool eof(){return raw.eof;}
 		static if(isMarkableRStream!S){
 			@property typeof(this) save(){return new RStreamWrap(raw);}
@@ -265,7 +261,6 @@ unittest{
 	struct TestSeek{
 		size_t readFill(void[]){return 0;}
 		size_t skip(size_t p){return false;}
-		@property avail(){return 0;}
 		@property ulong seek(){return 0;}
 		@property bool eof(){return true;}
 	}
@@ -273,7 +268,6 @@ unittest{
 	void[] temp;
 	cls.readFill(temp);
 	cls.skip(0);
-	cls.avail();
 	cls.seek();
 	void testFun(RStream_ test){
 		test.readFill(temp);
@@ -285,7 +279,6 @@ unittest{//spesific unittest for TypeRStream
 	struct TestType{
 		size_t readFill(void[]){return 0;}
 		size_t skip(size_t p){return false;}
-		@property avail(){return 0;}
 		@property ulong seek(){return 0;}
 		@property auto read(T)(){
 			return cast(T)0;

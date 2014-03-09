@@ -155,9 +155,11 @@ struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, r
 		}
 	}
 	@property{
-		size_t avail(){
-			auto av=stream.avail();
-			return min(av,limit);
+		static if(excepOnEof){
+			auto seek(){
+				auto av=stream.seek();
+				return min(av,limit);
+			}
 		}
 		
 		bool eof(){
