@@ -55,7 +55,7 @@ unittest{
 }
 
 
-struct FileRStream{
+struct FileRStream(bool seekable=true){
 	import std.stdio;
 	File file;
 	size_t readFill(void[] buf){
@@ -64,18 +64,39 @@ struct FileRStream{
 	}
 	
 	@property{
-		size_t skip(size_t size){
-			auto sz=file.size;
-			auto cr=file.tell;
-			if(cr+size>sz){
-				file.seek(sz);
-				return cast(size_t)(size-cr);
-			}else{
-				file.seek(size,SEEK_CUR);
-				return size;
+		static if(seekable){
+			size_t skip(size_t size){
+				auto sz=file.size;
+				auto cr=file.tell;
+				if(cr+size>sz){
+					file.seek(sz);
+					return cast(size_t)(size-cr);
+				}else{
+					file.seek(size,SEEK_CUR);
+					return size;
+				}
+			}
+		}else{
+			enum bufsize=2048;
+			size_t skip(size_t size){
+				import std.c.stdlib: alloca;
+				auto buf=alloca(bufsize);
+				size_t total;
+				while(true){
+					if(bufsize>size-total){
+						auto ret=readFill(buf[0..size]);
+						total+=ret;
+						return total;
+					}else{
+						auto ret=readFill(buf[0..bufsize]);
+						total+=ret;
+						if(ret!=2048){
+							return total;
+						}
+					}
+				}
 			}
 		}
-		
 		bool eof(){
 			return file.eof;
 		}
@@ -84,17 +105,20 @@ struct FileRStream{
 			file.close;
 		}
 		
-		auto seek(){
-			return file.size-file.tell;
+		static if(seekable){
+			auto seek(){
+				return file.size-file.tell;
+			}
 		}
 	}
 }
-unittest {
-	static assert(isDisposeRStream!FileRStream);
-	
-	debug(rstream_file){
+unittest{
+	static assert(isDisposeRStream!(FileRStream!true));
+}
+debug(rstream_file){
+	void main(){
 		import std.stdio;
-		auto fs=new RStreamWrap!FileRStream(FileRStream(File("Test.txt")));
+		auto fs=new RStreamWrap!(FileRStream!false)(FileRStream!false(stdin));
 		ubyte buf[16];
 		while(true){
 			writeln(fs.readFill(buf));
