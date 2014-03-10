@@ -5,7 +5,11 @@ import std.exception:enforce;
 import std.algorithm;
 class EofBadFormat:Exception{
 	this(){
-		super("Found eof when expecting Number");
+		this("Found eof when expecting Number");
+	}
+	
+	this(string s){
+		super(s);
 	}
 }
 
@@ -27,7 +31,7 @@ struct BigEndianRStream(S) if(isRStream!S){
 	
 	size_t readAr(T)(T[] buf) if(isDataType!T) {
 		auto sz=stream.readFill(buf);
-		if(sz==0||sz%T.sizeof!=0){
+		if(sz%T.sizeof!=0){
 			throw new EofBadFormat();
 		}
 		version(LittleEndian){
@@ -74,7 +78,7 @@ struct LittleEndianRStream(S) if(isRStream!S){
 	
 	size_t readAr(T)(T[] buf) if(isDataType!T) {
 		auto sz=stream.readFill(buf);
-		if(sz==0||sz%T.sizeof!=0){
+		if(sz%T.sizeof!=0){
 			throw new EofBadFormat();
 		}
 		version(BigEndian){

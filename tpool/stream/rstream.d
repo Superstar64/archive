@@ -169,7 +169,7 @@ unittest{
 //read string from a stream
 interface StringRStream_:RStream_{
 	@property{
-		final auto read(T)(){
+		final auto read(T)() if(isStringType!T){
 			mixin("return read_"~T.stringof~';');
 		}
 		char read_char();//do not call these
@@ -297,4 +297,44 @@ template RStreamInterfaceOf(S){//return interface of all streams that S supports
 		enum I=A.IS!(S);
 	}
 	alias RStreamInterfaceOf=interFuse!(Filter!(I,RStreamTur));
+}
+
+template hasR(S,T) {//checks if Stream supports type T
+	enum bool hasR=is(typeof((inout int=0){
+		S s=void;
+		T a=s.read!(T);
+		T[] v=void;
+		size_t z=s.readAr(v);
+	}));
+}
+unittest{
+	BigEndianRStream!MemRStream a=void;
+	static assert(hasR!(typeof(a),ubyte));
+	static assert(!hasR!(typeof(a),bool));
+}
+
+struct RawRStream(S,T) if(isRStream!S){
+	S stream;
+	alias stream this;
+	@property T read(Type:T)(){
+		ubyte[T.sizeof] buf;
+		stream.readFill(buf);
+		return *(cast(T*)(buf.ptr));
+	}
+	
+	size_t readAr(T[] t){
+		auto a=stream.readFill(cast(void[])t);
+		if(a%T.sizeof!=0){
+			throw new EofBadFormat("Eof when expecting "~T.stringof);
+		}
+		return a/T.sizeof;
+	}
+}
+unittest {
+	char[] a=['a','b','c'];
+	auto s=RawRStream!(MemRStream,char)(MemRStream(a));
+	assert(s.read!char=='a');
+	char[2] b2;
+	s.readAr(b2);
+	assert(b2=="bc");
 }

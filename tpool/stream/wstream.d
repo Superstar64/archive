@@ -204,3 +204,37 @@ template WStreamInterfaceOf(S){//return interface of all streams that S supports
 	}
 	alias WStreamInterfaceOf=interFuse!(Filter!(I,WStreamTur));
 }
+
+template hasW(S,T){//checks if the stream supports type T
+	enum bool hasW=is(typeof((inout int=0){
+		S s=void;
+		T t=void;
+		s.write(t);
+		const T[] z=void;
+		s.writeAr(z);
+	}));
+}
+unittest{
+	BigEndianWStream!MemWStream a=void;
+	static assert(hasW!(typeof(a),ubyte));
+	static assert(!hasW!(typeof(a),bool));
+}
+
+struct RawWStream(S,T) if(isWStream!S){//writes exactly from memory
+	S stream;
+	alias stream this;
+	void write(T t){
+		stream.writeFill(cast(void[])((&t)[0..1]));
+	}
+	
+	void writeAr(T[] t){
+		stream.writeFill(cast(void[])(t));
+	}
+}
+unittest {
+	void[] a;
+	auto s=RawWStream!(MemWStream,char)(MemWStream(a));
+	s.write('a');
+	s.write('b');
+	assert(cast(char[])(s.array)=="ab");
+}
