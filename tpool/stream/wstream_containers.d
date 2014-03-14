@@ -26,6 +26,8 @@ struct BigEndianWStream(S) if(isWStream!S){
 		}
 		stream.writeFill(t);
 	}
+	
+	mixin autoSave!stream;
 }
 unittest{
 	auto s=BigEndianWStream!MemWStream(MemWStream());
@@ -57,6 +59,7 @@ struct LittleEndianWStream(S) if(isWStream!S){
 		}
 		stream.writeFill(t);
 	}
+	mixin autoSave!stream;
 }
 unittest{
 	auto s=LittleEndianWStream!MemWStream(MemWStream());
@@ -69,9 +72,11 @@ unittest{
 struct WStreamRange(S) if(isWStream!S){//converts a wstream into a range
 	S stream;
 	void put(void[] buf){s.writeFill(buf);}
+	mixin autoSave!stream;
 }
 
 struct RangeWStream(R) if(isOutputRange!R){//converts a range to a wstream
+//todo implement save
 	R range;
 	void writeFill(void[] buf){
 		range.put(buf);
@@ -80,6 +85,7 @@ struct RangeWStream(R) if(isOutputRange!R){//converts a range to a wstream
 
 struct MultiPipeWStream(S...){//pipe single write stream to mulitple,
 //todo static if for other type of streams
+//todo implement save
 	S streams;
 	void writeFill(in void[] buf){
 		foreach(i;streams){
@@ -131,7 +137,7 @@ struct CountWStream(S) if(isWStream!S){
 		len+=buf.length;
 		return stream.writeFill(buf);
 	}
-	
+	mixin autoSave!(stream,len);
 }
 unittest {
 	static assert(isWStream!(CountWStream!VoidWStream));

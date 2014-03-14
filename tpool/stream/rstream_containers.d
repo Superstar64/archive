@@ -43,7 +43,7 @@ struct BigEndianRStream(S) if(isRStream!S){
 		}
 		return sz/T.sizeof;
 	}
-	
+	mixin autoSave!stream;
 }
 
 unittest {
@@ -90,7 +90,7 @@ struct LittleEndianRStream(S) if(isRStream!S){
 		}
 		return sz/T.sizeof;
 	}
-	
+	mixin autoSave!stream;
 }
 
 unittest {
@@ -170,6 +170,7 @@ struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, r
 			return limit==0;
 		}
 	}
+	mixin autoSave!(stream,limit);
 }
 unittest {//todo unittest skip
 	ubyte[12] buf=[0,1,0,0, 5,1,   1,0,  0,2, 3,1];
@@ -194,6 +195,11 @@ struct RangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as
 		_buf=buf_;
 		popFront();
 	}
+	this(S s,BufType[] buf,bool eof){//raw constructer , only use if you know what you are doing
+		stream=s;
+		_buf=buf;
+		_eof=eof;
+	}
 	@property{
 		auto front(){
 			return cast(const (BufType)[])_buf;
@@ -211,6 +217,7 @@ struct RangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as
 			return _eof;
 		}
 	}
+	mixin autoSave!(stream,_buf,_eof);
 }
 
 unittest{
@@ -241,6 +248,7 @@ struct AllRStream(S) if(isRStream!S) {//a stream that throws a exception when a 
 		enforce(s.skip(si)==si);
 		return si;
 	}
+	mixin autoSave!s;
 }
 unittest{
 	ubyte[7] buf;
