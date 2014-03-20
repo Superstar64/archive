@@ -3,6 +3,8 @@ import tpool.stream.wstream;
 import tpool.stream.common;
 import std.c.stdlib : alloca;//i'm dangerous
 import std.typetuple;
+import std.range;
+
 struct BigEndianWStream(S) if(isWStream!S){
 	S stream;
 	void write(T)(T t) if(isDataType!T){
@@ -71,16 +73,29 @@ unittest{
 
 struct WStreamRange(S) if(isWStream!S){//converts a wstream into a range
 	S stream;
-	void put(void[] buf){s.writeFill(buf);}
+	void put(const void[] buf){stream.writeFill(buf);}
 	mixin autoSave!stream;
 }
 
-struct RangeWStream(R) if(isOutputRange!R){//converts a range to a wstream
+unittest{
+	static assert(isOutputRange!(WStreamRange!(MemWStream),const void[]));
+}
+
+struct RangeWStream(R) if(isOutputRange!(R,const void[])){//converts a range to a wstream
 //todo implement save
 	R range;
-	void writeFill(void[] buf){
+	void writeFill(const void[] buf){
 		range.put(buf);
 	}
+	
+}
+unittest{
+	struct Temp{
+		void put(const void[] b){
+			
+		}
+	}
+	static assert(isWStream!(RangeWStream!(Temp)));
 }
 
 struct MultiPipeWStream(S...){//pipe single write stream to mulitple,
