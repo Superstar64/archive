@@ -82,12 +82,16 @@ unittest{
 }
 
 struct RangeWStream(R) if(isOutputRange!(R,const void[])){//converts a range to a wstream
-//todo implement save
+	import std.traits;
 	R range;
 	void writeFill(const void[] buf){
 		range.put(buf);
 	}
-	
+	static if(hasMember!(R,"save")&&typeof(R.save==R)){//todo unittest
+		auto save(){
+			return typeof(this)(range);
+		}
+	}
 }
 unittest{
 	struct Temp{
@@ -96,6 +100,7 @@ unittest{
 		}
 	}
 	static assert(isWStream!(RangeWStream!(Temp)));
+	
 }
 
 struct MultiPipeWStream(S...){//pipe single write stream to mulitple,

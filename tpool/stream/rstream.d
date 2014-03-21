@@ -39,7 +39,7 @@ template isMarkableRStream(S){
 	enum bool isMarkableRStream=isRStream!(S) && 
 		is(typeof((inout int=0){
 			S s=void;
-			static assert(is(S==typeof(s.save)));
+			s=s.save;
 		}));
 }
 unittest{

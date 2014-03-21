@@ -6,7 +6,7 @@ import tpool.stream.common;
 public import tpool.stream.wstream_containers;
 public import tpool.stream.wstream_implementations;
 
-alias WStreamTur=TypeTuple!(WStream_,TypeWStream_,DisposeWStream_,StringWStream_);
+alias WStreamTur=TypeTuple!(WStream_,TypeWStream_,DisposeWStream_,StringWStream_,MarkableWStream_);
 
 //generally you want a function that does all the flushing and closing calling the function that does all the writing
 
@@ -137,6 +137,25 @@ unittest{
 	static assert(isStringWStream!StringWStream_);
 	static assert(!isStringWStream!WStream_);
 }
+
+interface MarkableWStream_:WStream_{
+	@property typeof(this) save();
+	template IS(S){
+		alias IS =isMarkableWStream!S;
+	}
+}
+
+template isMarkableWStream(S){
+	enum bool isMarkableWStream=isWStream!(S)&& is(typeof((inout int=0){
+		S s=void;
+		s=s.save;
+	}));
+}
+
+unittest{
+	static assert(isMarkableWStream!(MarkableWStream_));
+}
+
 //Wraps s in a class usefull for virtual pointers
 class WStreamWrap(S,Par=Object):Par,WStreamInterfaceOf!S{
 	private S raw;alias raw this;
@@ -169,8 +188,10 @@ class WStreamWrap(S,Par=Object):Par,WStreamInterfaceOf!S{
 			void writeAr(in double[] b){raw.writeAr(b);}
 		}
 		static if(isDisposeWStream!S){
-			void flush(){raw.flush();}
-			void close(){raw.close();}
+			@property{
+				void flush(){raw.flush();}
+				void close(){raw.close();}
+			}
 		}
 		static if(isStringWStream!S){
 			void write(char b){raw.write(b);}
@@ -179,6 +200,9 @@ class WStreamWrap(S,Par=Object):Par,WStreamInterfaceOf!S{
 			void writeAr(in char[] b){raw.writeAr(b);}
 			void writeAr(in wchar[] b){raw.writeAr(b);}
 			void writeAr(in dchar[] b){raw.writeAr(b);}
+		}
+		static if(isMarkableWStream!S){
+			@property typeof(this) save(){return new typeof(this)(raw);};
 		}
 	}
 }
@@ -218,23 +242,4 @@ unittest{
 	BigEndianWStream!MemWStream a=void;
 	static assert(hasW!(typeof(a),ubyte));
 	static assert(!hasW!(typeof(a),bool));
-}
-
-struct RawWStream(S,T) if(isWStream!S){//writes exactly from memory
-	S stream;
-	alias stream this;
-	void write(T t){
-		stream.writeFill(cast(void[])((&t)[0..1]));
-	}
-	
-	void writeAr(T[] t){
-		stream.writeFill(cast(void[])(t));
-	}
-}
-unittest {
-	void[] a;
-	auto s=RawWStream!(MemWStream,char)(MemWStream(a));
-	s.write('a');
-	s.write('b');
-	assert(cast(char[])(s.array)=="ab");
 }
