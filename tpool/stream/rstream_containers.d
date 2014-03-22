@@ -237,7 +237,7 @@ unittest{
 
 struct AllRStream(S) if(isRStream!S) {//a stream that throws a exception when a buffer is not fully filled
 	S s;//stream
-	alias s this;
+	alias stream=s;
 	size_t readFill(void[] buf){
 		enforce(s.readFill(buf)==buf.length);
 		return buf.length;
@@ -261,3 +261,29 @@ unittest{
 	}
 	assert(a);
 }
+struct RawRStream(S,T) if(isRStream!S){
+	S stream;
+	alias stream this;
+	@property T read(Type:T)(){
+		ubyte[T.sizeof] buf;
+		stream.readFill(buf);
+		return *(cast(T*)(buf.ptr));
+	}
+	
+	size_t readAr(T[] t){
+		auto a=stream.readFill(cast(void[])t);
+		if(a%T.sizeof!=0){
+			throw new EofBadFormat("Eof when expecting "~T.stringof);
+		}
+		return a/T.sizeof;
+	}
+}
+unittest {
+	char[] a=['a','b','c'];
+	auto s=RawRStream!(MemRStream,char)(MemRStream(a));
+	assert(s.read!char=='a');
+	char[2] b2;
+	s.readAr(b2);
+	assert(b2=="bc");
+}
+

@@ -312,29 +312,3 @@ unittest{
 	static assert(hasR!(typeof(a),ubyte));
 	static assert(!hasR!(typeof(a),bool));
 }
-
-struct RawRStream(S,T) if(isRStream!S){
-	S stream;
-	alias stream this;
-	@property T read(Type:T)(){
-		ubyte[T.sizeof] buf;
-		stream.readFill(buf);
-		return *(cast(T*)(buf.ptr));
-	}
-	
-	size_t readAr(T[] t){
-		auto a=stream.readFill(cast(void[])t);
-		if(a%T.sizeof!=0){
-			throw new EofBadFormat("Eof when expecting "~T.stringof);
-		}
-		return a/T.sizeof;
-	}
-}
-unittest {
-	char[] a=['a','b','c'];
-	auto s=RawRStream!(MemRStream,char)(MemRStream(a));
-	assert(s.read!char=='a');
-	char[2] b2;
-	s.readAr(b2);
-	assert(b2=="bc");
-}
