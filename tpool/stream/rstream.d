@@ -312,3 +312,25 @@ unittest{
 	static assert(hasR!(typeof(a),ubyte));
 	static assert(!hasR!(typeof(a),bool));
 }
+
+mixin template readSkip(){
+	enum bufsize=2048;
+	size_t skip(size_t size){//make clearer later
+		ubyte buffer[bufsize];
+		auto buf=buffer.ptr;
+		size_t total;
+		while(true){
+			if(bufsize>size-total){
+				auto ret=readFill(buf[0..size]);
+				total+=ret;
+				return total;
+			}else{
+				auto ret=readFill(buf[0..bufsize]);
+				total+=ret;
+				if(ret!=2048){
+					return total;
+				}
+			}
+		}
+	}
+}

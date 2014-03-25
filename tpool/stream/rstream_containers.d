@@ -288,35 +288,61 @@ unittest {
 	assert(b2=="bc");
 	assert(s.eof);
 }
-/+ work in progress
-struct ZlibRStream(S) if(isRStream!S){
+
+struct ZlibRStream(S) if(isRStream!S){//buffers, reads more than needed
 	import etc.c.zlib;
 	import std.zlib;
 	RStream stream;
-	z_stream_s zstream;
+	z_stream_s zstream;//possible bug:inflateEnd may not get called if constructed with new
 	void[] buf;
-	this(RStream stream_,void[] buf){
-		z_stream_s s;
-		auto res=inflateInit(&s);
-		this(stream_,s,buf);
-	}
-	this(RStream stream_,typeof(zstream) z,void[] buffer){//expects z to already be inited
-		stream=stream_;
+	bool eof;
+	this(RStream stream_,void[] buf,z_stream_s z=z_stream_s.init){
 		zstream=z;
-		buf=buffer;
+		stream=stream_;
+		buf=buf_;
+		
 		reloadbuf();
 		zstream.next_in=buf.ptr;
 		zstream.avail_in=buf.length;
+		auto res=inflateInit(&zstream);
+		enforce(res==Z_OK);
 	}
 	
-	size_t readFill(){
+	~this(){
+		inflateEnd(&zstream);
+	}
+	
+	size_t readFill(void[] buf){
+		if(buf.length==0){
+			return 0;
+		}
+		zstream.next_out=buf.ptr;
+		zstream.avail_out=buf.length;
+	start:
+		auto res=inflate(&zstream,Z_SYNC_FLUSH);
+		enforce(res==Z_OK||res==Z_FLUSH_END);
+		if(zstream.avail_in==0){
+			if(eof){
+				inflateEnd(&zstream);
+				return buf.length-zstream.avail_out;
+			}else{
+				reloadbuf();
+				goto start;//sorry
+			}
+		}
 		
+		if(zstream.avail_out==0){
+			return buf.length;
+		}
+		throw new Exception("something went wrong with zlib");
 	}
 	
-	bool reloadbuf(){
+	mixin readSkip;
+	
+	void reloadbuf(){
 		auto l=buf.length;
+		assert(buf.length!=0);
 		buf=buf[0..stream.readFill(buf)];
-		return l!=buf.length;
+		eof=l!=buf.length;
 	}
 }
-+/
