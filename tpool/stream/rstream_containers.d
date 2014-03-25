@@ -238,6 +238,7 @@ unittest{
 struct AllRStream(S) if(isRStream!S) {//a stream that throws a exception when a buffer is not fully filled
 	S s;//stream
 	alias stream=s;
+	alias s this;
 	size_t readFill(void[] buf){
 		enforce(s.readFill(buf)==buf.length);
 		return buf.length;
@@ -285,5 +286,37 @@ unittest {
 	char[2] b2;
 	s.readAr(b2);
 	assert(b2=="bc");
+	assert(s.eof);
 }
-
+/+ work in progress
+struct ZlibRStream(S) if(isRStream!S){
+	import etc.c.zlib;
+	import std.zlib;
+	RStream stream;
+	z_stream_s zstream;
+	void[] buf;
+	this(RStream stream_,void[] buf){
+		z_stream_s s;
+		auto res=inflateInit(&s);
+		this(stream_,s,buf);
+	}
+	this(RStream stream_,typeof(zstream) z,void[] buffer){//expects z to already be inited
+		stream=stream_;
+		zstream=z;
+		buf=buffer;
+		reloadbuf();
+		zstream.next_in=buf.ptr;
+		zstream.avail_in=buf.length;
+	}
+	
+	size_t readFill(){
+		
+	}
+	
+	bool reloadbuf(){
+		auto l=buf.length;
+		buf=buf[0..stream.readFill(buf)];
+		return l!=buf.length;
+	}
+}
++/
