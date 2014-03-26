@@ -291,19 +291,20 @@ unittest {
 
 struct ZlibRStream(S) if(isRStream!S){//buffers, reads more than needed
 	import etc.c.zlib;
-	import std.zlib;
-	RStream stream;
+	S stream;
+	alias z_stream_s=z_stream;
 	z_stream_s zstream;//possible bug:inflateEnd may not get called if constructed with new
 	void[] buf;
-	bool eof;
-	this(RStream stream_,void[] buf,z_stream_s z=z_stream_s.init){
+	bool eof_;//end of buffering
+	bool eof;//end of stream
+	this(S stream_,void[] buf_,z_stream_s z=z_stream_s.init){
 		zstream=z;
 		stream=stream_;
 		buf=buf_;
-		
+		assert(buf.length>0);
 		reloadbuf();
-		zstream.next_in=buf.ptr;
-		zstream.avail_in=buf.length;
+		zstream.next_in=cast(typeof(zstream.next_in))buf.ptr;
+		zstream.avail_in=cast(typeof(zstream.avail_in))buf.length;
 		auto res=inflateInit(&zstream);
 		enforce(res==Z_OK);
 	}
@@ -316,15 +317,18 @@ struct ZlibRStream(S) if(isRStream!S){//buffers, reads more than needed
 		if(buf.length==0){
 			return 0;
 		}
-		zstream.next_out=buf.ptr;
-		zstream.avail_out=buf.length;
+		zstream.next_out=cast(typeof(zstream.next_out))buf.ptr;
+		zstream.avail_out=cast(typeof(zstream.avail_out))buf.length;
 	start:
 		auto res=inflate(&zstream,Z_SYNC_FLUSH);
-		enforce(res==Z_OK||res==Z_FLUSH_END);
+		enforce(res==Z_OK||res==Z_STREAM_END);
+		import std.stdio;
 		if(zstream.avail_in==0){
-			if(eof){
+			if(eof_){
 				inflateEnd(&zstream);
-				return buf.length-zstream.avail_out;
+				auto ret=buf.length-zstream.avail_out;
+				eof=true;
+				return ret;
 			}else{
 				reloadbuf();
 				goto start;//sorry
@@ -343,6 +347,20 @@ struct ZlibRStream(S) if(isRStream!S){//buffers, reads more than needed
 		auto l=buf.length;
 		assert(buf.length!=0);
 		buf=buf[0..stream.readFill(buf)];
-		eof=l!=buf.length;
+		eof_=l!=buf.length;
 	}
 }
+unittest{import std.zlib;import std.stdio;
+	ubyte[2^^8] buf;	//input buf
+	auto input=compress("hello world");//data
+	ubyte[10] buf2;		//output buf
+	auto zs=ZlibRStream!(MemRStream)(MemRStream(input),buf);
+	assert(!zs.eof);
+	assert(5==zs.readFill(buf2[0..5]));
+	assert(!zs.eof);
+	assert(buf2[0..5]=="hello");
+	assert(6==zs.readFill(buf2[0..6]));
+	assert(buf2[0..6]==" world");
+	assert(zs.eof);
+}
+void main(){}
