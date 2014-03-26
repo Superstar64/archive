@@ -27,7 +27,7 @@ struct BigEndianRStream(S) if(isRStream!S){
 			buf.reverse;
 		}
 		return *(cast(T*)buf.ptr);
-	}
+	}
 	
 	size_t readAr(T)(T[] buf) if(isDataType!T) {
 		auto sz=stream.readFill(buf);
@@ -363,4 +363,3 @@ unittest{import std.zlib;import std.stdio;
 	assert(buf2[0..6]==" world");
 	assert(zs.eof);
 }
-void main(){}
