@@ -27,7 +27,7 @@ struct BigEndianRStream(S) if(isRStream!S){
 			buf.reverse;
 		}
 		return *(cast(T*)buf.ptr);
-	}
+	}
 	
 	size_t readAr(T)(T[] buf) if(isDataType!T) {
 		auto sz=stream.readFill(buf);
@@ -278,6 +278,7 @@ struct RawRStream(S,T) if(isRStream!S){
 		}
 		return a/T.sizeof;
 	}
+	mixin autoSave!stream;
 }
 unittest {
 	char[] a=['a','b','c'];
@@ -288,15 +289,24 @@ unittest {
 	assert(b2=="bc");
 	assert(s.eof);
 }
-
+//todo make safer
 struct ZlibRStream(S) if(isRStream!S){//buffers, reads more than needed
 	import etc.c.zlib;
 	S stream;
-	alias z_stream_s=z_stream;
-	z_stream_s zstream;//possible bug:inflateEnd may not get called if constructed with new
+	z_stream_s zstream;alias z_stream_s=z_stream;//possible bug:inflateEnd may not get called if constructed with new
 	void[] buf;
 	bool eof_;//end of buffering
 	bool eof;//end of stream
+	
+	mixin autoSave!(stream,zstream,buf,eof_,eof);
+	this(S stream_,z_stream_s zstream_,void []buf_,bool eof_0,bool eof0){//raw costructer plese ignore
+		stream=stream_;
+		zstream=zstream_;
+		buf=buf_;
+		eof_=eof_0;
+		eof=eof0;
+	}
+	
 	this(S stream_,void[] buf_,z_stream_s z=z_stream_s.init){
 		zstream=z;
 		stream=stream_;
@@ -305,20 +315,16 @@ struct ZlibRStream(S) if(isRStream!S){//buffers, reads more than needed
 		reloadbuf();
 		zstream.next_in=cast(typeof(zstream.next_in))buf.ptr;
 		zstream.avail_in=cast(typeof(zstream.avail_in))buf.length;
-		auto res=inflateInit(&zstream);
-		enforce(res==Z_OK);
+		enforce(inflateInit(&zstream)==Z_OK);
 	}
 	
-	~this(){
-		inflateEnd(&zstream);
-	}
 	
-	size_t readFill(void[] buf){
-		if(buf.length==0){
+	size_t readFill(void[] data){
+		if(data.length==0){
 			return 0;
 		}
-		zstream.next_out=cast(typeof(zstream.next_out))buf.ptr;
-		zstream.avail_out=cast(typeof(zstream.avail_out))buf.length;
+		zstream.next_out=cast(typeof(zstream.next_out))data.ptr;
+		zstream.avail_out=cast(typeof(zstream.avail_out))data.length;
 	start:
 		auto res=inflate(&zstream,Z_SYNC_FLUSH);
 		enforce(res==Z_OK||res==Z_STREAM_END);
@@ -326,7 +332,7 @@ struct ZlibRStream(S) if(isRStream!S){//buffers, reads more than needed
 		if(zstream.avail_in==0){
 			if(eof_){
 				inflateEnd(&zstream);
-				auto ret=buf.length-zstream.avail_out;
+ 				auto ret=data.length-zstream.avail_out;
 				eof=true;
 				return ret;
 			}else{
@@ -336,7 +342,7 @@ struct ZlibRStream(S) if(isRStream!S){//buffers, reads more than needed
 		}
 		
 		if(zstream.avail_out==0){
-			return buf.length;
+			return data.length;
 		}
 		throw new Exception("something went wrong with zlib");
 	}
@@ -349,7 +355,15 @@ struct ZlibRStream(S) if(isRStream!S){//buffers, reads more than needed
 		buf=buf[0..stream.readFill(buf)];
 		eof_=l!=buf.length;
 	}
+	
+	void close(){
+		inflateEnd(&zstream);
+		static if(isDisposeRStream!S){
+			stream.close();
+		}
+	}
 }
+
 unittest{import std.zlib;import std.stdio;
 	ubyte[2^^8] buf;	//input buf
 	auto input=compress("hello world");//data

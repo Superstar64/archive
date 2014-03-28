@@ -165,3 +165,62 @@ unittest {
 	stream.write(cast(int)5);
 	assert(stream.stream.len==4);
 }
+
+
+struct ZlibWStream(S) if(isWStream!S){
+	import etc.c.zlib;import std.exception;
+	S stream;
+	z_stream_s zstream;alias z_stream_s=z_stream;
+	void[] buf;
+	this(S stream_,void[] buf_,int compressLev=-1,z_stream_s zstream_=z_stream_s.init){
+		stream=stream_;
+		buf=buf_;
+		zstream=zstream_;
+		zstream.next_out=cast(typeof(zstream.next_out)) buf.ptr;
+		zstream.avail_out=cast(typeof(zstream.avail_out)) buf.length;
+		enforce(deflateInit(&zstream,compressLev)==Z_OK);
+	}
+	
+	void writeFill(void[] data,int flushlev=Z_NO_FLUSH){
+		zstream.next_in=cast(typeof(zstream.next_in)) data.ptr;
+		zstream.avail_in=cast(typeof(zstream.avail_in)) data.length;
+	start:
+		auto ret=deflate(&zstream,flushlev);
+		enforce(ret==Z_OK||ret==Z_STREAM_END);
+		if(zstream.avail_out==0){
+			flush();
+			goto start;
+		}else if(zstream.avail_in==0){
+			return;
+		}
+		throw new Exception("something went wrong with zlib");
+	}
+	
+	void flush(){
+		stream.writeFill(buf[0..$-zstream.avail_out]);
+		zstream.next_out=cast(typeof(zstream.next_out))buf.ptr;
+		zstream.avail_out=cast(typeof(zstream.avail_out)) buf.length;
+	}
+	
+	void close(){
+		ubyte[0] a;
+		writeFill(a,Z_FINISH);
+		flush();
+		deflateEnd(&zstream);
+		static if(isDisposeWStream!(S)){
+			stream.close();
+		}
+	}
+}
+
+unittest{
+	ubyte[3] buffer;
+	MemWStream subS;
+	auto a=ZlibWStream!MemWStream(subS,buffer);
+	a.writeFill(cast(int[])[0,1,2,3,4,5]);
+	a.close();
+	subS=a.stream;//todo fix this
+	std.stdio.writeln(cast(int[])subS.array);
+	import std.zlib;
+	assert(uncompress(subS.array)==(cast(int[])[0,1,2,3,4,5]));
+}
