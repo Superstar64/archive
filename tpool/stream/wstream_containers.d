@@ -181,7 +181,7 @@ struct ZlibWStream(S) if(isWStream!S){
 		enforce(deflateInit(&zstream,compressLev)==Z_OK);
 	}
 	
-	void writeFill(void[] data,int flushlev=Z_NO_FLUSH){
+	void writeFill(const void[] data,int flushlev=Z_NO_FLUSH){
 		zstream.next_in=cast(typeof(zstream.next_in)) data.ptr;
 		zstream.avail_in=cast(typeof(zstream.avail_in)) data.length;
 	start:
@@ -215,12 +215,10 @@ struct ZlibWStream(S) if(isWStream!S){
 
 unittest{
 	ubyte[3] buffer;
-	MemWStream subS;
+	auto subS= MemWStream();
 	auto a=ZlibWStream!MemWStream(subS,buffer);
 	a.writeFill(cast(int[])[0,1,2,3,4,5]);
 	a.close();
-	subS=a.stream;//todo fix this
-	std.stdio.writeln(cast(int[])subS.array);
 	import std.zlib;
 	assert(uncompress(subS.array)==(cast(int[])[0,1,2,3,4,5]));
 }
