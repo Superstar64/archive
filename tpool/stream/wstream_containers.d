@@ -198,13 +198,15 @@ struct ZlibWStream(S) if(isWStream!S){
 		zstream.avail_out=cast(typeof(zstream.avail_out)) buf.length;
 	}
 	
-	void close(){
+	void close(bool sub=true){
 		ubyte[0] a;
 		writeFill(a,Z_FINISH);
 		flush();
 		deflateEnd(&zstream);
-		static if(isDisposeWStream!(S)){
-			stream.close();
+		if(sub){
+			static if(isDisposeWStream!(S)){
+				stream.close();
+			}
 		}
 	}
 }

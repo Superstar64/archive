@@ -289,8 +289,8 @@ unittest {
 	assert(b2=="bc");
 	assert(s.eof);
 }
-//todo make safer
-struct ZlibRStream(S) if(isRStream!S){//buffers, reads more than needed
+//todo unittest OuitOnStreamEnd
+struct ZlibRStream(S,bool QuitOnStreamEnd=false) if(isRStream!S){//buffers, reads more than needed
 	import etc.c.zlib;
 	S stream;
 	z_stream_s zstream;alias z_stream_s=z_stream;//possible bug:inflateEnd may not get called if constructed with new
@@ -301,7 +301,7 @@ struct ZlibRStream(S) if(isRStream!S){//buffers, reads more than needed
 	mixin autoSave!(stream,zstream,buf,eof_,eof);
 	this(S stream_,z_stream_s zstream_,void []buf_,bool eof_0,bool eof0){//raw costructer plese ignore
 		stream=stream_;
-		zstream=zstream_;
+		inflateCopy(&zstream,&zstream_);
 		buf=buf_;
 		eof_=eof_0;
 		eof=eof0;
@@ -320,7 +320,7 @@ struct ZlibRStream(S) if(isRStream!S){//buffers, reads more than needed
 	
 	
 	size_t readFill(void[] data){
-		if(data.length==0){
+		if(data.length==0||eof){
 			return 0;
 		}
 		zstream.next_out=cast(typeof(zstream.next_out))data.ptr;
@@ -328,11 +328,18 @@ struct ZlibRStream(S) if(isRStream!S){//buffers, reads more than needed
 	start:
 		auto res=inflate(&zstream,Z_SYNC_FLUSH);
 		enforce(res==Z_OK||res==Z_STREAM_END);
-		if(res==Z_STREAM_END){
-			enforce(zstream.avail_in==0);
+		static if(QuitOnStreamEnd){
+			if(res==Z_STREAM_END){
+				goto end;
+			}
+		}else{
+			if(res==Z_STREAM_END){
+				enforce(zstream.avail_in==0);
+			}
 		}
 		if(zstream.avail_in==0){
 			if(eof_){
+	end:
 				inflateEnd(&zstream);
  				auto ret=data.length-zstream.avail_out;
 				eof=true;
@@ -358,10 +365,12 @@ struct ZlibRStream(S) if(isRStream!S){//buffers, reads more than needed
 		eof_=l!=buf.length;
 	}
 	
-	void close(){
+	@property void close(bool sub=true){
 		inflateEnd(&zstream);
-		static if(isDisposeRStream!S){
-			stream.close();
+		if(sub){			
+			static if(isDisposeRStream!S){
+				stream.close();
+			}
 		}
 	}
 }
@@ -371,10 +380,16 @@ unittest{import std.zlib;import std.stdio;
 	auto input=compress("hello world");//data
 	ubyte[10] buf2;		//output buf
 	auto zs=ZlibRStream!(MemRStream)(MemRStream(input),buf);
+	static assert(isDisposeRStream!(typeof(zs)));
+	static assert(isMarkableRStream!(typeof(zs)));
 	assert(!zs.eof);
+	auto aaa=zs.save;
 	assert(5==zs.readFill(buf2[0..5]));
 	assert(!zs.eof);
 	assert(buf2[0..5]=="hello");
+	assert(5==aaa.readFill(buf2[0..5]));
+	assert(buf2[0..5]=="hello");
+	assert(!aaa.eof);
 	assert(6==zs.readFill(buf2[0..6]));
 	assert(buf2[0..6]==" world");
 	assert(zs.eof);
