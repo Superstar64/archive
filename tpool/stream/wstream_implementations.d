@@ -18,21 +18,11 @@ struct FileWStream{
 	}
 }
 
-class MemWStream{
+struct MemWStream{
 	import std.typecons;
 	void[] array;
 	void writeFill(const void[] buf){
 		array~=buf;
-	}
-	
-	this(){}
-	
-	this(void[] a){
-		array=a;
-	}
-	
-	static final auto opCall(void[] a=(void[]).init){
-		return new typeof(this)(a);
 	}
 	
 }

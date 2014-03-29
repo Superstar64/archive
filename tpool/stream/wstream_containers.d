@@ -216,5 +216,5 @@ unittest{
 	a.writeFill(cast(int[])[0,1,2,3,4,5]);
 	a.close();
 	import std.zlib;
-	assert(uncompress(subS.array)==(cast(int[])[0,1,2,3,4,5]));
+	assert(uncompress(a.stream.array)==(cast(int[])[0,1,2,3,4,5]));
 }
