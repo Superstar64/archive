@@ -6,7 +6,7 @@ import tpool.stream.common;
 public import tpool.stream.wstream_containers;
 public import tpool.stream.wstream_implementations;
 
-alias WStreamTur=TypeTuple!(WStream_,TypeWStream_,DisposeWStream_,StringWStream_,MarkableWStream_);
+alias WStreamTur=TypeTuple!(WStream_,TypeWStream_,DisposeWStream_,StringWStream_);
 
 //generally you want a function that does all the flushing and closing calling the function that does all the writing
 
@@ -138,24 +138,6 @@ unittest{
 	static assert(!isStringWStream!WStream_);
 }
 
-interface MarkableWStream_:WStream_{
-	@property typeof(this) save();
-	template IS(S){
-		alias IS =isMarkableWStream!S;
-	}
-}
-
-template isMarkableWStream(S){
-	enum bool isMarkableWStream=isWStream!(S)&& is(typeof((inout int=0){
-		S s=void;
-		s=s.save;
-	}));
-}
-
-unittest{
-	static assert(isMarkableWStream!(MarkableWStream_));
-}
-
 //Wraps s in a class usefull for virtual pointers
 class WStreamWrap(S,Par=Object):Par,WStreamInterfaceOf!S{
 	private S raw;alias raw this;
@@ -200,9 +182,6 @@ class WStreamWrap(S,Par=Object):Par,WStreamInterfaceOf!S{
 			void writeAr(in char[] b){raw.writeAr(b);}
 			void writeAr(in wchar[] b){raw.writeAr(b);}
 			void writeAr(in dchar[] b){raw.writeAr(b);}
-		}
-		static if(isMarkableWStream!S){
-			@property typeof(this) save(){return new typeof(this)(raw);};
 		}
 	}
 }

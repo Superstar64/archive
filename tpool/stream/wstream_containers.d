@@ -28,8 +28,6 @@ struct BigEndianWStream(S) if(isWStream!S){
 		}
 		stream.writeFill(t);
 	}
-	
-	mixin autoSave!stream;
 }
 unittest{
 	auto s=BigEndianWStream!MemWStream(MemWStream());
@@ -61,7 +59,6 @@ struct LittleEndianWStream(S) if(isWStream!S){
 		}
 		stream.writeFill(t);
 	}
-	mixin autoSave!stream;
 }
 unittest{
 	auto s=LittleEndianWStream!MemWStream(MemWStream());
@@ -157,7 +154,6 @@ struct CountWStream(S) if(isWStream!S){
 		len+=buf.length;
 		return stream.writeFill(buf);
 	}
-	mixin autoSave!(stream,len);
 }
 unittest {
 	static assert(isWStream!(CountWStream!VoidWStream));
