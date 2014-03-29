@@ -328,7 +328,9 @@ struct ZlibRStream(S) if(isRStream!S){//buffers, reads more than needed
 	start:
 		auto res=inflate(&zstream,Z_SYNC_FLUSH);
 		enforce(res==Z_OK||res==Z_STREAM_END);
-		import std.stdio;
+		if(res==Z_STREAM_END){
+			enforce(zstream.avail_in==0);
+		}
 		if(zstream.avail_in==0){
 			if(eof_){
 				inflateEnd(&zstream);
