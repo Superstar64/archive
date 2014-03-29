@@ -340,8 +340,7 @@ struct ZlibRStream(S,bool QuitOnStreamEnd=false) if(isRStream!S){//buffers, read
 		if(zstream.avail_in==0){
 			if(eof_){
 	end:
-				inflateEnd(&zstream);
- 				auto ret=data.length-zstream.avail_out;
+				auto ret=data.length-zstream.avail_out;
 				eof=true;
 				return ret;
 			}else{
@@ -380,10 +379,18 @@ unittest{import std.zlib;import std.stdio;
 	auto input=compress("hello world");//data
 	ubyte[10] buf2;		//output buf
 	auto zs=ZlibRStream!(MemRStream)(MemRStream(input),buf);
+	
+	scope(exit) zs.close;
+	
+	
 	static assert(isDisposeRStream!(typeof(zs)));
 	static assert(isMarkableRStream!(typeof(zs)));
 	assert(!zs.eof);
 	auto aaa=zs.save;
+	
+	scope(exit) aaa.close;
+	
+	
 	assert(5==zs.readFill(buf2[0..5]));
 	assert(!zs.eof);
 	assert(buf2[0..5]=="hello");
@@ -393,4 +400,4 @@ unittest{import std.zlib;import std.stdio;
 	assert(6==zs.readFill(buf2[0..6]));
 	assert(buf2[0..6]==" world");
 	assert(zs.eof);
-}
+}void main(){}
