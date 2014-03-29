@@ -1,7 +1,7 @@
 module tpool.stream.rstream;
 
 import std.typetuple;
-import tpool.stream.common;
+public import tpool.stream.common;
 
 public import tpool.stream.rstream_containers;
 public import tpool.stream.rstream_implementations;

@@ -400,4 +400,4 @@ unittest{import std.zlib;import std.stdio;
 	assert(6==zs.readFill(buf2[0..6]));
 	assert(buf2[0..6]==" world");
 	assert(zs.eof);
-}void main(){}
+}

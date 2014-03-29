@@ -214,7 +214,7 @@ struct ZlibWStream(S) if(isWStream!S){
 unittest{
 	ubyte[3] buffer;
 	auto subS= MemWStream();
-	auto a=ZlibWStream!MemWStream(subS,buffer);
+	auto a=ZlibWStream!(MemWStream)(subS,buffer);
 	a.writeFill(cast(int[])[0,1,2,3,4,5]);
 	a.close();
 	import std.zlib;
