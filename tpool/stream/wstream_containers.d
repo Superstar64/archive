@@ -220,3 +220,23 @@ unittest{
 	import std.zlib;
 	assert(uncompress(a.stream.array)==(cast(int[])[0,1,2,3,4,5]));
 }
+
+
+struct RawWStream(S,T) if(isWStream!S){//writes exactly from memory
+	S stream;
+	alias stream this;
+	void write(T t){
+		stream.writeFill(cast(void[])((&t)[0..1]));
+	}
+	
+	void writeAr(T[] t){
+		stream.writeFill(cast(void[])(t));
+	}
+}
+unittest {
+	void[] a;
+	auto s=RawWStream!(MemWStream,char)(MemWStream(a));
+	s.write('a');
+	s.write('b');
+	assert(cast(char[])(s.array)=="ab");
+}
