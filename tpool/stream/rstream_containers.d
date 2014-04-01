@@ -13,32 +13,40 @@ class EofBadFormat:Exception{
 	}
 }
 
-struct BigEndianRStream(S) if(isRStream!S){
+struct BigEndianRStream(S,bool check=true) if(isRStream!S){//if check is true then it check if readFill a aligned amount of data
 	import std.exception;
 	S stream;
 	alias stream this;
 	@property T read(T)() if(isDataType!T) {
 		ubyte buf[T.sizeof];
 		auto sz=stream.readFill(buf);
-		if(sz!=T.sizeof){
-			throw new EofBadFormat();
-		}
-		version(LittleEndian){
-			buf.reverse;
+		static if(T.sizeof!=1){
+			static if(check){
+				if(sz!=T.sizeof){
+					throw new EofBadFormat();
+				}
+			}
+			version(LittleEndian){
+				buf.reverse;
+			}
 		}
 		return *(cast(T*)buf.ptr);
 	}
 	
 	size_t readAr(T)(T[] buf) if(isDataType!T) {
 		auto sz=stream.readFill(buf);
-		if(sz%T.sizeof!=0){
-			throw new EofBadFormat();
-		}
-		version(LittleEndian){
-			auto temp=cast(ubyte[]) buf;//templates errors are scary
-			uint count;
-			for(uint i=0;i<temp.length;i+=T.sizeof){
-				temp[i..i+T.sizeof].reverse;
+		static if(T.sizeof!=1){
+			static if(check){
+				if(sz%T.sizeof!=0){
+					throw new EofBadFormat();
+				}
+			}
+			version(LittleEndian){
+				auto temp=cast(ubyte[]) buf;//templates errors are scary
+				uint count;
+				for(uint i=0;i<temp.length;i+=T.sizeof){
+					temp[i..i+T.sizeof].reverse;
+				}
 			}
 		}
 		return sz/T.sizeof;
@@ -60,32 +68,40 @@ unittest {
 }
 
 
-struct LittleEndianRStream(S) if(isRStream!S){
+struct LittleEndianRStream(S,bool check=true) if(isRStream!S){//if check is true then it check if readFill a aligned amount of data
 	import std.exception;
 	S stream;
 	alias stream this;
 	@property T read(T)() if(isDataType!T) {
 		ubyte buf[T.sizeof];
 		auto sz=stream.readFill(buf);
-		if(sz!=T.sizeof){
-			throw new EofBadFormat();
-		}
-		version(BigEndian){
-			buf.reverse;
+		static if(T.sizeof!=1){
+			static if(check){
+				if(sz!=T.sizeof){
+					throw new EofBadFormat();
+				}
+			}
+			version(BigEndian){
+				buf.reverse;
+			}
 		}
 		return *(cast(T*)buf.ptr);
 	}
 	
 	size_t readAr(T)(T[] buf) if(isDataType!T) {
 		auto sz=stream.readFill(buf);
-		if(sz%T.sizeof!=0){
-			throw new EofBadFormat();
-		}
-		version(BigEndian){
-			auto temp=cast(ubyte[]) buf;//templates errors are scary
-			uint count;
-			for(uint i=0;i<temp.length;i+=T.sizeof){
-				temp[i..i+T.sizeof].reverse;
+		static if(T.sizeof!=1){
+			static if(check){
+				if(sz%T.sizeof!=0){
+					throw new EofBadFormat();
+				}
+			}
+			version(BigEndian){
+				auto temp=cast(ubyte[]) buf;//templates errors are scary
+				uint count;
+				for(uint i=0;i<temp.length;i+=T.sizeof){
+					temp[i..i+T.sizeof].reverse;
+				}
 			}
 		}
 		return sz/T.sizeof;
