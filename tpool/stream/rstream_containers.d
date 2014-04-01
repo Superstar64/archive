@@ -278,19 +278,24 @@ unittest{
 	}
 	assert(a);
 }
-struct RawRStream(S,T) if(isRStream!S){
+struct RawRStream(S,T,bool check=true) if(isRStream!S){
 	S stream;
 	alias stream this;
-	@property T read(Type:T)(){
+	@property T read(T)(){
 		ubyte[T.sizeof] buf;
-		stream.readFill(buf);
+		auto len=stream.readFill(buf);
+		static if(check){
+			enforce(len==T.sizeof);
+		}
 		return *(cast(T*)(buf.ptr));
 	}
 	
 	size_t readAr(T[] t){
 		auto a=stream.readFill(cast(void[])t);
-		if(a%T.sizeof!=0){
-			throw new EofBadFormat("Eof when expecting "~T.stringof);
+		static if(check){
+			if(a%T.sizeof!=0){
+				throw new EofBadFormat("Eof when expecting "~T.stringof);
+			}
 		}
 		return a/T.sizeof;
 	}
