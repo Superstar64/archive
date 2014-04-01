@@ -60,16 +60,16 @@ interface TypeWStream_:WStream_{
 template isTypeWStream(S){
 	enum bool isTypeWStream=isWStream!S && is(typeof((inout int=0){
 		S s=void;
-		s.write(cast(const ubyte)0);
-		s.write(cast(const ushort)0);
-		s.write(cast(const uint)0);
-		s.write(cast(const ulong)0);
-		s.write(cast(const byte)0);
-		s.write(cast(const short)0);
-		s.write(cast(const int)0);
-		s.write(cast(const long)0);
-		s.write(cast(const float)0);
-		s.write(cast(const double)0);
+		s.write(cast(ubyte)0);
+		s.write(cast(ushort)0);
+		s.write(cast(uint)0);
+		s.write(cast(ulong)0);
+		s.write(cast(byte)0);
+		s.write(cast(short)0);
+		s.write(cast(int)0);
+		s.write(cast(long)0);
+		s.write(cast(float)0);
+		s.write(cast(double)0);
 		void[] a=void;
 		s.writeAr(cast(const ubyte[])a);
 		s.writeAr(cast(const ushort[])a);

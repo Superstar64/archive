@@ -1,12 +1,15 @@
 module tpool.stream.wstream_containers;
 import tpool.stream.wstream;
 import tpool.stream.common;
-import std.c.stdlib : alloca;//i'm dangerous
+import std.c.stdlib;//i'm dangerous
 import std.typetuple;
 import std.range;
-
-struct BigEndianWStream(S) if(isWStream!S){
+import std.algorithm;
+//bufsize is in data per type not bytes
+struct BigEndianWStream(S,size_t bufsize=1024) if(isWStream!S){//if bufsize == 0 then it calls alloca
 	S stream;
+	alias stream this;
+	
 	void write(T)(T t) if(isDataType!T){
 		version(LittleEndian){
 			(cast(void*)(&t))[0..T.sizeof].reverse;
@@ -16,28 +19,49 @@ struct BigEndianWStream(S) if(isWStream!S){
 	
 	void writeAr(T)(in T[] t) if(isDataType!T){
 		version(LittleEndian){//allaca and reverse
-			auto length=T.sizeof*t.length;
-			auto ptr=cast(ubyte*)alloca(length);
-			for(uint i=0;i<length;i+=T.sizeof){
-				foreach(val;0..T.sizeof){
-					ptr[i+val]=(cast(ubyte[])t)[i+(T.sizeof-1-val)];
+			static if(bufsize==0){
+				auto length=T.sizeof*t.length;
+				auto ptr=cast(ubyte*)alloca(length);
+				for(uint i=0;i<length;i+=T.sizeof){
+					foreach(val;0..T.sizeof){
+						ptr[i+val]=(cast(ubyte[])t)[i+(T.sizeof-1-val)];
+					}
 				}
+				stream.writeFill(ptr[0..length]);
+				return;
+			}else{
+				T[bufsize] buf;
+				size_t length;
+				size_t nlength;
+				bool cpy(){
+					nlength=t.length-length>buf.length?buf.length:t.length-length;
+					memcpy(buf.ptr,t.ptr+length,nlength*T.sizeof);
+					scope(exit) length+=nlength;
+					return length!=t.length;
+				}
+				while(cpy){
+					foreach(i;buf.ptr..buf.ptr+nlength){
+						reverse((cast(ubyte*)(i))[0..T.sizeof] );
+					}
+					stream.writeFill(buf[0..nlength]);
+				}
+				return;
 			}
-			stream.writeFill(ptr[0..length]);
-			return;
 		}
 		stream.writeFill(t);
 	}
 }
 unittest{
 	auto s=BigEndianWStream!MemWStream(MemWStream());
+	//static assert(isTypeWStream!(typeof(s)));
 	s.write(cast(ushort)10);
 	s.writeAr(cast(ushort[])[1,3]);
 	assert((cast(ubyte[])s.stream.array)==(cast(ubyte[])[0,10,0,1,0,3]));
 }
 
-struct LittleEndianWStream(S) if(isWStream!S){
+struct LittleEndianWStream(S,size_t bufsize=1024) if(isWStream!S){
 	S stream;
+	alias stream this;
 	void write(T)(T t) if(isDataType!T){
 		version(BigEndian){
 			(cast(void*)(&t))[0..T.sizeof].reverse;
@@ -47,21 +71,41 @@ struct LittleEndianWStream(S) if(isWStream!S){
 	
 	void writeAr(T)(in T[] t) if(isDataType!T){
 		version(BigEndian){//allaca and reverse
-			auto length=T.sizeof*t.length;
-			auto ptr=cast(ubyte*)alloca(length);
-			for(uint i=0;i<length;i+=T.sizeof){
-				foreach(val;0..T.sizeof){
-					ptr[i+val]=(cast(ubyte[])t)[i+(T.sizeof-1-val)];
+			static if(bufsize==0){
+				auto length=T.sizeof*t.length;
+				auto ptr=cast(ubyte*)alloca(length);
+				for(uint i=0;i<length;i+=T.sizeof){
+					foreach(val;0..T.sizeof){
+						ptr[i+val]=(cast(ubyte[])t)[i+(T.sizeof-1-val)];
+					}
 				}
+				stream.writeFill(ptr[0..length]);
+				return;
+			}else{
+				T[bufsize] buf;
+				size_t length;
+				size_t nlength;
+				bool cpy(){
+					nlength=t.length-length>buf.length?buf.length:t.length-length;
+					memcpy(buf.ptr,t.ptr+length,nlength*T.sizeof);
+					scope(exit) length+=nlength;
+					return length!=t.length;
+				}
+				while(cpy){
+					foreach(i;buf.ptr..buf.ptr+nlength){
+						reverse((cast(ubyte*)(i))[0..T.sizeof] );
+					}
+					stream.writeFill(buf[0..nlength]);
+				}
+				return;
 			}
-			stream.writeFill(ptr[0..length]);
-			return;
 		}
 		stream.writeFill(t);
 	}
 }
 unittest{
 	auto s=LittleEndianWStream!MemWStream(MemWStream());
+	static assert(isTypeWStream!(typeof(s)));
 	s.write(cast(ushort)10);
 	s.writeAr(cast(ushort[])[1,3]);
 	assert((cast(ubyte[])s.stream.array)==(cast(ubyte[])[10,0,1,0,3,0]));
@@ -140,6 +184,7 @@ struct MultiPipeWStream(S...){//pipe single write stream to mulitple,
 }
 unittest{
 	auto stream=MultiPipeWStream!(MemWStream)(MemWStream());
+	static assert(isWStream!(typeof(stream)));
 	void[] temp;
 	stream.writeFill(temp);
 	static assert(isWStream!(typeof(stream)));
@@ -215,6 +260,7 @@ unittest{
 	ubyte[3] buffer;
 	auto subS= MemWStream();
 	auto a=ZlibWStream!(MemWStream)(subS,buffer);
+	static assert(isWStream!(typeof(a)));
 	a.writeFill(cast(int[])[0,1,2,3,4,5]);
 	a.close();
 	import std.zlib;
