@@ -286,3 +286,29 @@ unittest {
 	s.write('b');
 	assert(cast(char[])(s.array)=="ab");
 }
+
+struct Crc32WStream(S) if(isWStream!S){//todo: unittest
+	import etc.c.zlib;
+	S Stream;
+	uint crc;
+	void writeFill(const void[] buf){
+		crc=crc32(crc,cast(ubyte*)buf.ptr,buf.length);
+		Stream.writeFill(buf);
+	}
+}
+unittest{
+	auto stream=Crc32WStream!MemWStream(MemWStream());
+}
+
+struct Adler32WStream(S) if(isWStream!S){//todo: unittest
+	import etc.c.zlib;
+	S Stream;
+	uint adler;
+	void writeFill(const void[] buf){
+		adler=adler32(adler,cast(ubyte*)buf.ptr,buf.length);
+		Stream.writeFill(buf);
+	}
+}
+unittest{
+	auto stream=Adler32WStream!MemWStream(MemWStream());
+}

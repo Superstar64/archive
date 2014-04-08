@@ -422,3 +422,39 @@ unittest{import std.zlib;import std.stdio;
 	assert(buf2[0..6]==" world");
 	assert(zs.eof);
 }
+
+struct Crc32RStream(S) if(isRStream!S){//todo: unittest (other than compiling)
+	import etc.c.zlib;
+	S Stream;
+	uint crc;
+	mixin readSkip;
+	mixin autoSave!(Stream,crc);
+	auto readFill(void[] arr){
+		auto len=Stream.readFill(arr);
+		assert(len<=arr.length);
+		crc=crc32(crc,cast(ubyte*)arr.ptr,len);
+		return len;
+	}
+}
+unittest{
+	ubyte buf[]=[];
+	auto str=Crc32RStream!MemRStream(MemRStream(buf));
+}
+
+struct Adler32RStream(S) if(isRStream!S){
+	import etc.c.zlib;
+	S Stream;
+	uint adler;
+	mixin readSkip;
+	mixin autoSave!(Stream,adler);
+	auto readFill(void[] arr){
+		auto len=Stream.readFill(arr);
+		assert(len<=arr.length);
+		adler=adler32(adler,cast(ubyte*)arr.ptr,len);
+		return len;
+	}
+}
+unittest{
+	ubyte buf[]=[];
+	auto str=Adler32RStream!MemRStream(MemRStream(buf));
+}
