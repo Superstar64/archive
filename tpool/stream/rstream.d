@@ -313,8 +313,7 @@ unittest{
 	static assert(!hasR!(typeof(a),bool));
 }
 
-mixin template readSkip(){
-	enum bufsize=2048;
+mixin template readSkip(size_t bufsize=2048){
 	size_t skip(size_t size){//make clearer later
 		ubyte buffer[bufsize];
 		auto buf=buffer.ptr;
