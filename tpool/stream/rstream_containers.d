@@ -458,3 +458,77 @@ unittest{
 	ubyte buf[]=[];
 	auto str=Adler32RStream!MemRStream(MemRStream(buf));
 }
+//Left Right stream
+//you can chain these together eg: LRStream!(MemRStream,LRStream(MemRStream,MemRStream))
+struct LRStream(S1,S2) if(isRStream!S1 && isRStream!S2){// a stream that reads from the first until it's empty then reads from the second
+	S1 stream1;
+	S2 stream2;
+	bool remain=true;
+	bool eof(){
+		return stream1.eof&&stream2.eof;
+	}
+	size_t readFill(void[] buf){
+		if(remain){
+			auto read=stream1.readFill(buf); assert(read<=buf.length);
+			if(read!=buf.length){
+				remain=false;
+				return read+readFill(buf[read..$]);
+			}else{
+				return buf.length;
+			}
+		}else{
+			return stream2.readFill(buf);
+		}
+	}
+	
+	size_t skip(size_t size){
+		if(remain){
+			auto read=stream1.skip(size); assert(read<=size);
+			if(read!=size){
+				remain=false;
+				return read+skip(size-read);
+			}else{
+				return size;
+			}
+		}else{
+			return stream2.skip(size);
+		}
+	}
+}
+unittest{
+	ubyte i[]=[1,2,3];
+	auto str=LRStream!(MemRStream,MemRStream)(MemRStream(i),MemRStream(i));
+	ubyte o[6];
+	assert(str.readFill(o[0..1])==1);
+	assert(o[0]==1);
+	
+	assert(!str.eof);
+	
+	assert(str.readFill(o[0..4])==4);
+	assert(o[0..4]==[2,3,1,2]);
+	
+	assert(!str.eof);
+	
+	assert(str.readFill(o[0..1])==1);
+	
+	assert(str.eof);
+	
+	assert(o[0]==3);
+}
+
+unittest{
+	ubyte i[]=[1,2,3];
+	auto str=LRStream!(MemRStream,MemRStream)(MemRStream(i),MemRStream(i));
+	ubyte o[6];
+	assert(str.skip(1)==1);
+	
+	assert(!str.eof);
+	
+	assert(str.skip(4)==4);
+	
+	assert(!str.eof);
+	
+	assert(str.skip(1)==1);
+	
+	assert(str.eof);
+}
