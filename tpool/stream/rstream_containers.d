@@ -464,7 +464,7 @@ struct LRStream(S1,S2) if(isRStream!S1 && isRStream!S2){// a stream that reads f
 	S1 stream1;
 	S2 stream2;
 	bool remain=true;
-	bool eof(){
+	@property bool eof(){
 		return stream1.eof&&stream2.eof;
 	}
 	size_t readFill(void[] buf){
@@ -494,15 +494,23 @@ struct LRStream(S1,S2) if(isRStream!S1 && isRStream!S2){// a stream that reads f
 			return stream2.skip(size);
 		}
 	}
+	static if(isMarkableRStream!S1 && isMarkableRStream!S2){
+		@property auto save(){
+			return typeof(this)(stream1.save,stream2.save,remain);
+		}
+	}
 }
 unittest{
 	ubyte i[]=[1,2,3];
-	auto str=LRStream!(MemRStream,MemRStream)(MemRStream(i),MemRStream(i));
+	auto str=LRStream!(MemRStream,MemRStream)(MemRStream(i),MemRStream(i));static assert(isMarkableRStream!(typeof(str)));
 	ubyte o[6];
 	assert(str.readFill(o[0..1])==1);
 	assert(o[0]==1);
 	
 	assert(!str.eof);
+	auto str2=str.save;
+	assert(str2.readFill(o[0..4])==4);
+	assert(o[0..4]==[2,3,1,2]);
 	
 	assert(str.readFill(o[0..4])==4);
 	assert(o[0..4]==[2,3,1,2]);
@@ -518,11 +526,14 @@ unittest{
 
 unittest{
 	ubyte i[]=[1,2,3];
-	auto str=LRStream!(MemRStream,MemRStream)(MemRStream(i),MemRStream(i));
+	auto str=LRStream!(MemRStream,MemRStream)(MemRStream(i),MemRStream(i));static assert(isMarkableRStream!(typeof(str)));
 	ubyte o[6];
 	assert(str.skip(1)==1);
 	
 	assert(!str.eof);
+	
+	auto str2=str.save;
+	assert(str2.skip(4)==4);
 	
 	assert(str.skip(4)==4);
 	
