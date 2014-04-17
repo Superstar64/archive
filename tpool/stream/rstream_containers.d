@@ -131,7 +131,7 @@ struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, r
 															//if excepOnEof is true, it throws if eof is reached before limit
 	S stream;
 	ulong limit;
-	size_t readFill(void[] buf){
+	size_t readFill(void[] buf) out(_outLength) {assert(buf.length <=_outLength); } body {
 		if(buf.length>limit){
 			auto len=stream.readFill(buf[0..cast(size_t)limit]);
 			static if(excepOnEof){
@@ -153,7 +153,7 @@ struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, r
 		}
 	}
 	
-	size_t skip(size_t amount){
+	size_t skip(size_t amount) out(_outLength) {assert(amount <=_outLength); } body{
 		if(amount>limit){
 			auto len=stream.skip(cast(size_t)limit);
 			static if(excepOnEof){
@@ -255,12 +255,12 @@ struct AllRStream(S) if(isRStream!S) {//a stream that throws a exception when a 
 	S s;//stream
 	alias stream=s;
 	alias s this;
-	size_t readFill(void[] buf){
+	size_t readFill(void[] buf) out(_outLength) {assert(buf.length <=_outLength); } body{
 		enforce(s.readFill(buf)==buf.length);
 		return buf.length;
 	}
 	
-	size_t skip(size_t si){
+	size_t skip(size_t si) out(_outLength) {assert(si <=_outLength); } body{
 		enforce(s.skip(si)==si);
 		return si;
 	}
@@ -340,7 +340,7 @@ struct ZlibRStream(S,bool QuitOnStreamEnd=false) if(isRStream!S){//buffers, read
 	}
 	
 	
-	size_t readFill(void[] data){
+	size_t readFill(void[] data) out(_outLength) {assert(data.length <=_outLength); } body{
 		if(data.length==0||eof){
 			return 0;
 		}
@@ -429,7 +429,7 @@ struct Crc32RStream(S) if(isRStream!S){//todo: unittest (other than compiling)
 	uint crc;
 	mixin readSkip;
 	mixin autoSave!(Stream,crc);
-	auto readFill(void[] arr){
+	auto readFill(void[] arr) out(_outLength) {assert(arr.length <=_outLength); } body{
 		auto len=Stream.readFill(arr);
 		assert(len<=arr.length);
 		crc=crc32(crc,cast(ubyte*)arr.ptr,len);
@@ -447,7 +447,7 @@ struct Adler32RStream(S) if(isRStream!S){
 	uint adler;
 	mixin readSkip;
 	mixin autoSave!(Stream,adler);
-	auto readFill(void[] arr){
+	auto readFill(void[] arr) out(_outLength) {assert(arr.length <=_outLength); } body{
 		auto len=Stream.readFill(arr);
 		assert(len<=arr.length);
 		adler=adler32(adler,cast(ubyte*)arr.ptr,len);
@@ -467,7 +467,7 @@ struct LRStream(S1,S2) if(isRStream!S1 && isRStream!S2){// a stream that reads f
 	@property bool eof(){
 		return stream1.eof&&stream2.eof;
 	}
-	size_t readFill(void[] buf){
+	size_t readFill(void[] buf) out(_outLength) {assert(buf.length <=_outLength); } body{
 		if(remain){
 			auto read=stream1.readFill(buf); assert(read<=buf.length);
 			if(read!=buf.length){
@@ -481,7 +481,7 @@ struct LRStream(S1,S2) if(isRStream!S1 && isRStream!S2){// a stream that reads f
 		}
 	}
 	
-	size_t skip(size_t size){
+	size_t skip(size_t size) out(_outLength) {assert(size <=_outLength); } body{
 		if(remain){
 			auto read=stream1.skip(size); assert(read<=size);
 			if(read!=size){
