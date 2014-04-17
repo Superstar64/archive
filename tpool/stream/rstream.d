@@ -314,7 +314,7 @@ unittest{
 }
 
 mixin template readSkip(size_t bufsize=2048){
-	size_t skip(size_t size) out(_outLength) {assert(size <=_outLength); } body{//make clearer later
+	size_t skip(size_t size) out(_outLength) {assert(_outLength<=size ); } body{//make clearer later
 		ubyte buffer[bufsize];
 		auto buf=buffer.ptr;
 		size_t total;
@@ -335,4 +335,4 @@ mixin template readSkip(size_t bufsize=2048){
 	}
 }
 //for copy pasting
-// out(_outLength) {assert(buf.length <=_outLength); } body
+// out(_outLength) {assert(_outLength<=buf.length ); } body

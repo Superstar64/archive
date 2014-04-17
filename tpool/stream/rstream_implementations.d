@@ -3,7 +3,7 @@ import tpool.stream.rstream;
 struct MemRStream{
 	import std.c.string;
 	const(void)[] arr;
-	size_t readFill(void[] buf) out(_outLength) {assert(buf.length <=_outLength); } body{
+	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body{
 		if(buf.length>=arr.length){
 			memcpy(buf.ptr,arr.ptr,arr.length);
 			auto len=arr.length;
@@ -16,7 +16,7 @@ struct MemRStream{
 		}
 	}
 	
-	size_t skip(size_t len) out(_outLength) {assert(len <=_outLength); } body{
+	size_t skip(size_t len) out(_outLength) {assert(_outLength<=len ); } body{
 		if(len>=arr.length){
 			auto arlen=arr.length;
 			arr=arr[0..0];
@@ -58,7 +58,7 @@ unittest{
 struct FileRStream(bool seekable=true){
 	import std.stdio;
 	File file;
-	size_t readFill(void[] buf) out(_outLength) {assert(buf.length <=_outLength); } body{
+	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body{
 		auto s=file.rawRead(buf);
 		return s.length;
 	}
