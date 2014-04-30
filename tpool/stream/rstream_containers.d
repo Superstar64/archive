@@ -187,7 +187,7 @@ struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, r
 	}
 	mixin autoSave!(stream,limit);
 }
-unittest {//todo unittest skip
+unittest {
 	ubyte[12] buf=[0,1,0,0, 5,1,   1,0,  0,2, 3,1];
 	auto stream=LimitRStream!MemRStream(MemRStream(buf),4);
 	static assert(isRStream!(typeof(stream)));
@@ -196,6 +196,15 @@ unittest {//todo unittest skip
 	assert(len==3);
 	len=stream.readFill(temp);
 	assert(len==1);
+	assert(stream.eof);
+}
+
+unittest {
+	ubyte[12] buf=[0,1,0,0, 5,1,   1,0,  0,2, 3,1];
+	auto stream=LimitRStream!MemRStream(MemRStream(buf),4);
+	static assert(isRStream!(typeof(stream)));
+	assert(stream.skip(3)==3);
+	assert(stream.skip(5)==1);
 	assert(stream.eof);
 }
 
@@ -310,11 +319,11 @@ unittest {
 	assert(b2=="bc");
 	assert(s.eof);
 }
-//todo unittest OuitOnStreamEnd
+
 struct ZlibRStream(S,bool QuitOnStreamEnd=false) if(isRStream!S){//buffers, reads more than needed
 	import etc.c.zlib;
 	S stream;
-	z_stream_s zstream;alias z_stream_s=z_stream;//possible bug:inflateEnd may not get called if constructed with new
+	z_stream_s zstream;alias z_stream_s=z_stream;
 	void[] buf;
 	bool eof_;//end of buffering
 	bool eof;//end of stream
@@ -423,7 +432,35 @@ unittest{import std.zlib;import std.stdio;
 	assert(zs.eof);
 }
 
-struct Crc32RStream(S) if(isRStream!S){//todo: unittest (other than compiling)
+unittest{import std.zlib;import std.stdio;
+	ubyte[2^^8] buf;	//input buf
+	auto input=compress("hello world");//data
+	input~=cast(ubyte[])[4,1];//test for ZlibRStream!true
+	ubyte[10] buf2;		//output buf
+	auto zs=ZlibRStream!(MemRStream,true)(MemRStream(input),buf);
+	
+	scope(exit) zs.close;
+	
+	
+	static assert(isDisposeRStream!(typeof(zs)));
+	static assert(isMarkableRStream!(typeof(zs)));
+	assert(!zs.eof);
+	auto aaa=zs.save;
+	
+	scope(exit) aaa.close;
+	
+	
+	assert(5==zs.readFill(buf2[0..5]));
+	assert(!zs.eof);
+	assert(buf2[0..5]=="hello");
+	assert(5==aaa.readFill(buf2[0..5]));
+	assert(buf2[0..5]=="hello");
+	assert(!aaa.eof);
+	assert(6==zs.readFill(buf2[0..6]));
+	assert(buf2[0..6]==" world");
+	assert(zs.eof);
+}
+struct Crc32RStream(S) if(isRStream!S){
 	import etc.c.zlib;
 	S Stream;
 	uint crc;
@@ -437,8 +474,12 @@ struct Crc32RStream(S) if(isRStream!S){//todo: unittest (other than compiling)
 	}
 }
 unittest{
-	ubyte buf[]=[];
-	auto str=Crc32RStream!MemRStream(MemRStream(buf));
+	import std.zlib;
+	enum ubyte[] source=[3,4,5,9,0];
+	auto str=Crc32RStream!MemRStream(MemRStream(source));
+	auto res=crc32(0,source);
+	str.skip(1000);
+	assert(str.crc==res);
 }
 
 struct Adler32RStream(S) if(isRStream!S){
@@ -455,8 +496,12 @@ struct Adler32RStream(S) if(isRStream!S){
 	}
 }
 unittest{
-	ubyte buf[]=[];
-	auto str=Adler32RStream!MemRStream(MemRStream(buf));
+	import std.zlib;
+	enum ubyte[] source=[3,4,5,9,0];
+	auto str=Adler32RStream!MemRStream(MemRStream(source));
+	auto res=adler32(0,source);
+	str.skip(1000);
+	assert(str.adler==res);
 }
 //Left Right stream
 //you can chain these together eg: LRStream!(MemRStream,LRStream(MemRStream,MemRStream))

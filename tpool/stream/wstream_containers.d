@@ -128,11 +128,6 @@ struct RangeWStream(R) if(isOutputRange!(R,const void[])){//converts a range to 
 	void writeFill(const void[] buf){
 		range.put(buf);
 	}
-	static if(hasMember!(R,"save")&&typeof(R.save==R)){//todo unittest
-		auto save(){
-			return typeof(this)(range);
-		}
-	}
 }
 unittest{
 	struct Temp{
@@ -145,8 +140,6 @@ unittest{
 }
 
 struct MultiPipeWStream(S...){//pipe single write stream to mulitple,
-//todo static if for other type of streams
-//todo implement save
 	S streams;
 	void writeFill(in void[] buf){
 		foreach(i;streams){
@@ -189,6 +182,24 @@ unittest{
 	stream.writeFill(temp);
 	static assert(isWStream!(typeof(stream)));
 	static assert(!isTypeWStream!((typeof(stream))));
+	
+	
+	struct Temp{
+		auto writeFill(in void[] buf){
+			
+		}
+		
+		@property{
+			void flush(){
+				
+			}
+			
+			void close(){
+				
+			}
+		}
+	}
+	static assert(isDisposeWStream!Temp);
 }
 
 struct CountWStream(S) if(isWStream!S){
@@ -298,6 +309,8 @@ struct Crc32WStream(S) if(isWStream!S){//todo: unittest
 }
 unittest{
 	auto stream=Crc32WStream!MemWStream(MemWStream());
+	static assert(isWStream!((typeof(stream))));
+	
 }
 
 struct Adler32WStream(S) if(isWStream!S){//todo: unittest
@@ -311,4 +324,5 @@ struct Adler32WStream(S) if(isWStream!S){//todo: unittest
 }
 unittest{
 	auto stream=Adler32WStream!MemWStream(MemWStream());
+	static assert(isWStream!((typeof(stream))));
 }
