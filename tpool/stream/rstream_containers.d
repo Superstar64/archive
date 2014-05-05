@@ -462,11 +462,11 @@ unittest{import std.zlib;import std.stdio;
 }
 struct Crc32RStream(S) if(isRStream!S){
 	import etc.c.zlib;
-	S Stream;
+	S Stream;alias stream=Stream;alias stream this;//opps
 	uint crc;
 	mixin readSkip;
 	mixin autoSave!(Stream,crc);
-	auto readFill(void[] arr) out(_outLength) {assert(_outLength<=arr.length ); } body{
+	@property auto readFill(void[] arr) out(_outLength) {assert(_outLength<=arr.length ); } body{
 		auto len=Stream.readFill(arr);
 		assert(len<=arr.length);
 		crc=crc32(crc,cast(ubyte*)arr.ptr,len);
@@ -477,6 +477,7 @@ unittest{
 	import std.zlib;
 	enum ubyte[] source=[3,4,5,9,0];
 	auto str=Crc32RStream!MemRStream(MemRStream(source));
+	static assert(isRStream!(typeof(str)));
 	auto res=crc32(0,source);
 	str.skip(1000);
 	assert(str.crc==res);
@@ -484,11 +485,11 @@ unittest{
 
 struct Adler32RStream(S) if(isRStream!S){
 	import etc.c.zlib;
-	S Stream;
+	S Stream;alias stream=Stream;alias stream this;
 	uint adler;
 	mixin readSkip;
 	mixin autoSave!(Stream,adler);
-	auto readFill(void[] arr) out(_outLength) {assert(_outLength<=arr.length ); } body{
+	@property auto readFill(void[] arr) out(_outLength) {assert(_outLength<=arr.length ); } body{
 		auto len=Stream.readFill(arr);
 		assert(len<=arr.length);
 		adler=adler32(adler,cast(ubyte*)arr.ptr,len);
@@ -499,6 +500,7 @@ unittest{
 	import std.zlib;
 	enum ubyte[] source=[3,4,5,9,0];
 	auto str=Adler32RStream!MemRStream(MemRStream(source));
+	static assert(isRStream!(typeof(str)));
 	auto res=adler32(0,source);
 	str.skip(1000);
 	assert(str.adler==res);

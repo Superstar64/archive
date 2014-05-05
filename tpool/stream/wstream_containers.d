@@ -300,7 +300,7 @@ unittest {
 
 struct Crc32WStream(S) if(isWStream!S){//todo: unittest
 	import etc.c.zlib;
-	S Stream;
+	S Stream;alias stream=Stream;alias stream this;
 	uint crc;
 	void writeFill(const void[] buf){
 		crc=crc32(crc,cast(ubyte*)buf.ptr,buf.length);
@@ -315,7 +315,7 @@ unittest{
 
 struct Adler32WStream(S) if(isWStream!S){//todo: unittest
 	import etc.c.zlib;
-	S Stream;
+	S Stream;alias stream=Stream;alias stream this;
 	uint adler;
 	void writeFill(const void[] buf){
 		adler=adler32(adler,cast(ubyte*)buf.ptr,buf.length);
