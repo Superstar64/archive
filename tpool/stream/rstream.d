@@ -320,7 +320,7 @@ mixin template readSkip(size_t bufsize=2048){
 		size_t total;
 		while(true){
 			if(bufsize>size-total){
-				auto ret=readFill(buf[0..size]);
+				auto ret=readFill(buf[0..size-total]);
 				total+=ret;
 				return total;
 			}else{
