@@ -59,6 +59,9 @@ struct FileRStream(bool seekable=true){
 	import std.stdio;
 	File file;
 	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body{
+		if(buf.length==0){
+			return 0;
+		}
 		auto s=file.rawRead(buf);
 		return s.length;
 	}
