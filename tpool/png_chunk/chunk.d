@@ -52,7 +52,7 @@ version(chunk_test){
 			return;
 		}
 		auto buf=read(args[1]);
-		auto fstream=FileRStream!true(File(args[1]));
+		auto fstream=FileRStream!false(File(args[1]));
 		ubyte[8] sig;
 		fstream.readFill(sig);
 		enforce(sig==[0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]);
