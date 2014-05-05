@@ -20,12 +20,12 @@ struct BigEndianRStream(S,bool check=true) if(isRStream!S){//if check is true th
 	@property T read(T)() if(isDataType!T) {
 		ubyte buf[T.sizeof];
 		auto sz=stream.readFill(buf);
-		static if(T.sizeof!=1){
-			static if(check){
-				if(sz!=T.sizeof){
-					throw new EofBadFormat();
-				}
+		static if(check){
+			if(sz!=T.sizeof){
+				throw new EofBadFormat();
 			}
+		}
+		static if(T.sizeof!=1){
 			version(LittleEndian){
 				buf.reverse;
 			}
@@ -75,12 +75,12 @@ struct LittleEndianRStream(S,bool check=true) if(isRStream!S){//if check is true
 	@property T read(T)() if(isDataType!T) {
 		ubyte buf[T.sizeof];
 		auto sz=stream.readFill(buf);
-		static if(T.sizeof!=1){
-			static if(check){
-				if(sz!=T.sizeof){
-					throw new EofBadFormat();
-				}
+		static if(check){
+			if(sz!=T.sizeof){
+				throw new EofBadFormat();
 			}
+		}
+		static if(T.sizeof!=1){
 			version(BigEndian){
 				buf.reverse;
 			}
