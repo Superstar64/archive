@@ -82,8 +82,12 @@ struct FileRStream(bool seekable=true){
 		}else{
 			mixin readSkip;
 		}
-		bool eof(){
-			return file.eof;
+		static if(seekable){
+			bool eof(){
+				return seek==0;
+			}
+		}else{
+			static assert(0,"FileRStream!false .eof is broken for now, due to the way pipes works");
 		}
 		
 		void close(){
