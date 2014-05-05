@@ -462,7 +462,7 @@ unittest{import std.zlib;import std.stdio;
 }
 struct Crc32RStream(S) if(isRStream!S){
 	import etc.c.zlib;
-	S Stream;alias stream=Stream;alias stream this;//opps
+	S stream;alias Stream=stream;alias stream this;
 	uint crc;
 	mixin readSkip;
 	mixin autoSave!(Stream,crc);
@@ -485,7 +485,7 @@ unittest{
 
 struct Adler32RStream(S) if(isRStream!S){
 	import etc.c.zlib;
-	S Stream;alias stream=Stream;alias stream this;
+	S stream;alias Stream=stream;alias stream this;
 	uint adler;
 	mixin readSkip;
 	mixin autoSave!(Stream,adler);
