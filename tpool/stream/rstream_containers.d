@@ -3,6 +3,7 @@ import tpool.stream.rstream;
 import tpool.stream.common;
 import std.exception:enforce;
 import std.algorithm;
+import std.range;
 class EofBadFormat:Exception{
 	this(){
 		this("Found eof when expecting Number");
@@ -589,4 +590,58 @@ unittest{
 	assert(str.skip(1)==1);
 	
 	assert(str.eof);
+}
+
+struct JoinRStream(R) if(isInputRange!R && isRStream!(ElementType!R)){
+	R range;
+	bool eof;
+	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body{
+		if(eof){
+			return 0;
+		}
+		auto sz=range.front.readFill(buf);
+		if(sz==buf.length){
+			return sz;
+		}
+		assert(range.front.eof);
+		range.popFront();
+		if(range.empty){
+			eof=true;
+			return sz;
+		}else{
+			return readFill(buf[sz..$]);
+		}
+	}
+	
+	size_t skip(size_t length) out(_outLength) {assert(_outLength<=length ); } body{
+		if(eof){
+			return 0;
+		}
+		auto sz=range.front.skip(length);
+		if(sz==length){
+			return sz;
+		}
+		assert(range.front.eof);
+		range.popFront();
+		if(range.empty){
+			eof=true;
+			return sz;
+		}else{
+			return skip(length-sz);
+		}
+	}
+}
+unittest{
+	ubyte[5] data=[1,2,3,4,5];
+	auto stream=JoinRStream!(Take!(Cycle!(MemRStream[])))(take(cycle([MemRStream(data)]),3));
+	static assert(isRStream!(typeof(stream)));
+	ubyte[6] buf;
+	assert(stream.readFill(buf)==6);
+	assert(buf==[1,2,3,4,5,1]);
+	assert(!stream.eof);
+	
+	assert(stream.readFill(buf[0..1])==1);
+	assert(buf[0..1]==[2]);
+	assert(stream.skip(uint.max)==8);
+	assert(stream.eof);
 }
