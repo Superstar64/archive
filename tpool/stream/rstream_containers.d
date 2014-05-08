@@ -213,6 +213,7 @@ struct RangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as
 	S stream;
 	alias stream this;
 	BufType[] _buf;
+	typeof(_buf) front;
 	bool _eof;
 	
 	this(S s,BufType[] buf_){
@@ -226,9 +227,6 @@ struct RangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as
 		_eof=eof;
 	}
 	@property{
-		auto front(){
-			return cast(const (BufType)[])_buf;
-		}
 		
 		void popFront(){
 			auto len=stream.readFill(_buf);
@@ -236,13 +234,14 @@ struct RangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as
 				_eof=true;
 				_buf=_buf[0..len];
 			}
+			front=_buf;
 		}
 		
 		bool empty(){
 			return _eof;
 		}
 	}
-	mixin autoSave!(stream,_buf,_eof);
+	mixin autoSave!(stream,_buf,front,_eof);
 }
 
 unittest{
