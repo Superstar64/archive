@@ -221,9 +221,10 @@ struct RangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as
 		_buf=buf_;
 		popFront();
 	}
-	this(S s,BufType[] buf,bool eof){//raw constructer , only use if you know what you are doing
+	this(S s,BufType[] buf,BufType[] front_,bool eof){//raw constructer , only use if you know what you are doing
 		stream=s;
 		_buf=buf;
+		front=front_;
 		_eof=eof;
 	}
 	@property{
@@ -248,6 +249,7 @@ unittest{
 	ubyte[12] array=[0,0,1,0,1,5,0,1,2,0,1,3];
 	ubyte[4] buf=void;
 	auto chunker=RangeRStream!(MemRStream,ubyte)(MemRStream(array),buf);
+	static assert(isInputRange!(typeof(chunker)));
 	assert(!chunker.empty);
 	assert(chunker.front==[0,0,1,0]);
 	chunker.popFront;
@@ -608,7 +610,7 @@ struct JoinRStream(R) if(isInputRange!R && isRStream!(ElementType!R)){
 			eof=true;
 			return sz;
 		}else{
-			return readFill(buf[sz..$]);
+			return sz+readFill(buf[sz..$]);
 		}
 	}
 	
@@ -626,13 +628,14 @@ struct JoinRStream(R) if(isInputRange!R && isRStream!(ElementType!R)){
 			eof=true;
 			return sz;
 		}else{
-			return skip(length-sz);
+			return sz+skip(length-sz);
 		}
 	}
 }
 unittest{
 	ubyte[5] data=[1,2,3,4,5];
-	auto stream=JoinRStream!(Take!(Cycle!(MemRStream[])))(take(cycle([MemRStream(data)]),3));
+	auto range=[MemRStream(data),MemRStream(data),MemRStream(data)];
+	auto stream=JoinRStream!(typeof(range))(range);
 	static assert(isRStream!(typeof(stream)));
 	ubyte[6] buf;
 	assert(stream.readFill(buf)==6);
