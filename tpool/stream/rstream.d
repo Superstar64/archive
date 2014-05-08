@@ -6,7 +6,7 @@ public import tpool.stream.common;
 public import tpool.stream.rstream_containers;
 public import tpool.stream.rstream_implementations;
 
-alias RStreamTur=TypeTuple!(RStream_,MarkableRStream_,SeekableRStream_,TypeRStream_,DisposeRStream_,StringRStream_);
+alias RStreamTur=TypeTuple!(RStream_,MarkableRStream_,SeekableRStream_,TypeRStream_,DisposeRStream_);
 
 //ReadStream
 interface RStream_{//assigning or copying may make this stream invalid
@@ -166,39 +166,6 @@ unittest{
 	static assert(!isDisposeRStream!RStream_);
 	static assert(isDisposeRStream!DisposeRStream_);
 }
-//read string from a stream
-interface StringRStream_:RStream_{
-	@property{
-		final auto read(T)() if(isStringType!T){
-			mixin("return read_"~T.stringof~';');
-		}
-		char read_char();//do not call these
-		wchar read_wchar();//ditto use transform
-		dchar read_dchar();//ditto use transform
-	}
-	size_t readAr(char[] c);//reads into c reads amount read
-	size_t readAr(wchar[] c);//ditto use transform
-	size_t readAr(dchar[] c);//ditto use transform
-	template IS(S){
-		enum IS=isStringRStream!S;
-	}
-}
-template isStringRStream(S){
-	enum bool isStringRStream=isRStream!S&& is(typeof((inout int=0){
-		S s=void;
-		static assert(is(typeof(s.read!char)==char));
-		static assert(is(typeof(s.read!wchar)==wchar));
-		static assert(is(typeof(s.read!dchar)==dchar));
-		void[] a=void;
-		static assert(is(size_t ==typeof(s.readAr(cast(char[])a))));
-		static assert(is(size_t ==typeof(s.readAr(cast(wchar[])a))));
-		static assert(is(size_t ==typeof(s.readAr(cast(dchar[])a))));
-	}));
-}
-unittest{
-	static assert(isStringRStream!StringRStream_);
-	static assert(!isStringRStream!RStream_);
-}
 //wrap S in a class, usefull if you prefer virtual pointers over code duplication
 class RStreamWrap(S,Par=Object):Par,RStreamInterfaceOf!(S) {//need to find a better way to do this
 	private S raw;alias raw this;
@@ -245,16 +212,7 @@ class RStreamWrap(S,Par=Object):Par,RStreamInterfaceOf!(S) {//need to find a bet
 	static if(isDisposeRStream!S){
 		@property void close(){raw.close;}
 	}
-	static if(isStringRStream!S){
-			@property{
-				char read_char(){return raw.read!char;}
-				wchar read_wchar(){return raw.read!wchar;}
-				dchar read_dchar(){return raw.read!dchar;}
-			}
-			size_t readAr(char[] c){return raw.readAr(c);}
-			size_t readAr(wchar[] c){return raw.readAr(c);}
-			size_t readAr(dchar[] c){return raw.readAr(c);}
-	}
+	
 }
 
 unittest{
