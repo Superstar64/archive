@@ -14,11 +14,18 @@ struct ChunkRange(S) if(isRStream!S){//carefull constructer pops first chunk imi
 		}
 	}
 	
-	BigEndianRStream!S stream;
+	
 	this(S stream_){
 		stream=BigEndianRStream!(S)(stream_);
 		popFront();
 	}
+	this(BigEndianRStream!S stream_,Chunk front_,bool first_,bool empty_){//raw constructor
+		stream=stream_;
+		front=front_;
+		first=first_;
+		empty=empty_;
+	}
+	BigEndianRStream!S stream;
 	Chunk front;
 	bool first=true;
 	bool empty;
@@ -41,7 +48,7 @@ struct ChunkRange(S) if(isRStream!S){//carefull constructer pops first chunk imi
 		enforce(name.length==crcstream.readFill(name));
 		front=Chunk(name,typeof(front.stream)(crcstream,len));
 	}
-	
+	mixin autoSave!(stream,front,first,empty);
 }
 
 version(chunk_test){
