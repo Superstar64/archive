@@ -631,12 +631,25 @@ struct JoinRStream(R) if(isInputRange!R && isRStream!(ElementType!R)){
 			return sz+skip(length-sz);
 		}
 	}
+	static if(isForwardRange!(R)&&isSeekableRStream!(ElementType!(R))){
+		@property ulong seek(){
+			auto iter=range.save;
+			ulong sum;
+			foreach(strem;iter){
+				sum+=strem.seek;
+			}
+			return sum;
+		}
+	}
 }
 unittest{
 	ubyte[5] data=[1,2,3,4,5];
 	auto range=[MemRStream(data),MemRStream(data),MemRStream(data)];
 	auto stream=JoinRStream!(typeof(range))(range);
 	static assert(isRStream!(typeof(stream)));
+	
+	assert(stream.seek==15);
+	
 	ubyte[6] buf;
 	assert(stream.readFill(buf)==6);
 	assert(buf==[1,2,3,4,5,1]);
