@@ -5,10 +5,14 @@ import tpool.stream.rstream;
 import std.range;
 import std.exception: enforce;
 
-struct ChunkRange(S) if(isRStream!S){//carefull constructer pops first chunk imidately
+struct ChunkRange(S,bool checkCrc=true) if(isRStream!S){//carefull constructer pops first chunk imidately
 	struct Chunk{//type used for reading chunk
 		char[4] name;
-		LimitRStream!(Crc32RStream!(S),true) stream;
+		static if(checkCrc){
+			LimitRStream!(Crc32RStream!(S),true) stream;
+		}else{
+			LimitRStream!(S,true) stream;
+		}
 		@property auto length(){
 			return stream.seek;
 		}
@@ -34,16 +38,26 @@ struct ChunkRange(S) if(isRStream!S){//carefull constructer pops first chunk imi
 			first=false;
 		}else{
 			front.stream.skip(uint.max);//reach the end of the chunk to fill the crc
-			stream=typeof(stream)(front.stream.stream.stream);//rewrap S into BigEndianRStream!S
+			static if(checkCrc){
+				stream=typeof(stream)(front.stream.stream.stream);//rewrap S into BigEndianRStream!S
+			}else{
+				stream=typeof(stream)(front.stream.stream);//rewrap S into BigEndianRStream!S
+			}
 			auto crc=stream.read!uint;
-			enforce(crc==front.stream.stream.crc);
+			static if(checkCrc){
+				enforce(crc==front.stream.stream.crc);
+			}
 			empty=stream.eof;
 			if(empty){
 				return;
 			}
 		}
 		auto len=stream.read!uint;
-		auto crcstream=Crc32RStream!(S)(stream.stream);
+		static if(checkCrc){
+			auto crcstream=Crc32RStream!(S)(stream.stream);
+		}else{
+			auto crcstream=stream.stream;
+		}
 		char[4] name;
 		enforce(name.length==crcstream.readFill(name));
 		front=Chunk(name,typeof(front.stream)(crcstream,len));
@@ -58,7 +72,6 @@ version(chunk_test){
 			writeln("no arguments");
 			return;
 		}
-		auto buf=read(args[1]);
 		auto fstream=FileRStream!false(File(args[1]));
 		ubyte[8] sig;
 		fstream.readFill(sig);
@@ -71,6 +84,33 @@ version(chunk_test){
 			writeln("name  :",i.name);
 			writeln("length:",i.length);
 			
+		}
+	}
+}
+
+version(chunk_test2){//save and no crc test
+	void main(string args[]){
+		import std.stdio;import std.file;
+		if(args.length<2){
+			writeln("no arguments");
+			return;
+		}
+		auto buf=read(args[1]);
+		
+		auto fstream=MemRStream(buf);
+		ubyte[8] sig;
+		fstream.readFill(sig);
+		enforce(sig==[0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]);
+		writeln(sig);
+		
+		auto chunks=ChunkRange!(typeof(fstream),false)  (fstream);
+		static assert(isForwardRange!(typeof(chunks)));
+		foreach(i;chunks.save){
+			writeln("name  :",i.name);
+			writeln("length:",i.length);
+		}
+		foreach(i;chunks){
+			writeln("save test ",i.stream.seek);
 		}
 	}
 }
