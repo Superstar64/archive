@@ -124,8 +124,9 @@ unittest {
 }
 
 class EofBeforeLength:Exception{
-	this(size_t read){
-		super("Eof reached before limit");
+	this(ulong read){
+		import std.conv;
+		super("Eof reached before limit "~to!string(read)~" bytes expected");
 	}
 }
 struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, return eof when limit bytes are read
@@ -168,7 +169,7 @@ struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, r
 			auto len=stream.skip(amount);
 			static if(excepOnEof){
 				if(len!=amount){
-					throw new EofBeforeLength(cast(size_t) amount);
+					throw new EofBeforeLength(amount);
 				}
 			}
 			limit-=len;
@@ -179,6 +180,11 @@ struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, r
 		static if(excepOnEof){
 			auto seek(){
 				return limit;
+			}
+		}else static if(isSeekableRStream!(S)){
+			auto seek(){//todo test
+				import std.math;
+				return min(limit,stream.seek);
 			}
 		}
 		
