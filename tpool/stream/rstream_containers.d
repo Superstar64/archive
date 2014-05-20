@@ -182,7 +182,7 @@ struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, r
 				return limit;
 			}
 		}else static if(isSeekableRStream!(S)){
-			auto seek(){//todo test
+			auto seek(){
 				import std.math;
 				return min(limit,stream.seek);
 			}
@@ -198,6 +198,9 @@ unittest {
 	ubyte[12] buf=[0,1,0,0, 5,1,   1,0,  0,2, 3,1];
 	auto stream=LimitRStream!MemRStream(MemRStream(buf),4);
 	static assert(isRStream!(typeof(stream)));
+	static assert(isSeekableRStream!(typeof(stream)));
+	static assert(isMarkableRStream!(typeof(stream)));
+	assert(stream.seek==4);
 	ubyte[3] temp;
 	auto len=stream.readFill(temp);
 	assert(len==3);
@@ -210,6 +213,9 @@ unittest {
 	ubyte[12] buf=[0,1,0,0, 5,1,   1,0,  0,2, 3,1];
 	auto stream=LimitRStream!MemRStream(MemRStream(buf),4);
 	static assert(isRStream!(typeof(stream)));
+	static assert(isSeekableRStream!(typeof(stream)));
+	static assert(isMarkableRStream!(typeof(stream)));
+	assert(stream.seek==4);
 	assert(stream.skip(3)==3);
 	assert(stream.skip(5)==1);
 	assert(stream.eof);
@@ -552,6 +558,11 @@ struct LRStream(S1,S2) if(isRStream!S1 && isRStream!S2){// a stream that reads f
 	static if(isMarkableRStream!S1 && isMarkableRStream!S2){
 		@property auto save(){
 			return typeof(this)(stream1.save,stream2.save,remain);
+		}
+	}
+	static if(isSeekableRStream!S1 && isSeekableRStream!S2){
+		@property auto seek(){
+			return stream1.seek+stream2.seek;
 		}
 	}
 }
