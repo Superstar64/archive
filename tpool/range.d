@@ -32,9 +32,16 @@ unittest{
 }
 struct OnPop(Range,alias fun) if(isInputRange!Range){
 	Range r;
+	alias r this;
 	mixin autoSave!r;
 	@property auto popFront(){
-		fun();
+		static if(is(typeof((inout int=0){
+			fun(r.front);
+		}))){
+			fun(r.front);
+		}else{
+			fun();
+		}
 		r.popFront;
 	}
 }
@@ -46,7 +53,7 @@ template onPop(alias fun){
 unittest {
 	ubyte[]a =[0,1];
 	bool test=false;
-	auto range=onPop!(()=>test=true)(a);
+	auto range=onPop!(a=>test=true)(a);
 	range.popFront;
 	assert(test);
 }
