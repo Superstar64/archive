@@ -1,0 +1,1 @@
+dmd -odbuild/obj tpool/stream/*.d tpool/png_chunk/*.d tpool/range.d -c $@
