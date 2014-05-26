@@ -1,1 +1,1 @@
-dmd tpool/stream/*.d tpool/png_chunk/*.d tpool/range.d -lib -ofbuild/tpool.a $@
+find . -name "*.d" |xargs dmd -lib -ofbuild/tpool.a $@

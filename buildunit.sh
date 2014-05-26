@@ -1,1 +1,1 @@
-dmd -odbuild/obj tpool/stream/*.d tpool/png_chunk/*.d tpool/range.d -ofbuild/test -unittest -main $@
+find . -name "*.d" |xargs dmd -odbuild/obj -ofbuild/test -unittest -main $@
