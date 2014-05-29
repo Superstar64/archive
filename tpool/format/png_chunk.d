@@ -1,4 +1,4 @@
-module tpool.png_chunk.chunk;
+module tpool.format.png_chunk;
 //Png chunks
 //https://en.wikipedia.org/wiki/Portable_Network_Graphics#.22Chunks.22_within_the_file
 import tpool.stream.rstream;
