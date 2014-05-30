@@ -677,7 +677,7 @@ auto lrStream(S1,S2)(S1 s1,S2 s2){
 unittest{
 	auto a=lrStream(MemRStream(),MemRStream());
 }
-struct JoinRStream(R) if(isInputRange!R && isRStream!(ElementType!R)){
+struct JoinRStream(R,bool allowsave=false) if(isInputRange!R && isRStream!(ElementType!R)){
 	R range;
 	bool eof;
 	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body{
@@ -725,6 +725,9 @@ struct JoinRStream(R) if(isInputRange!R && isRStream!(ElementType!R)){
 			return sum;
 		}
 	}
+	static  if(allowsave && isForwardRange!R){
+		mixin autoSave!(range,eof);
+	}
 }
 unittest{
 	ubyte[5] data=[1,2,3,4,5];
@@ -745,8 +748,17 @@ unittest{
 	assert(stream.eof);
 }
 auto joinRStream(R)(R r){
-	return JoinRStream!R(r);
+	return JoinRStream!(R,false)(r);
 }
 unittest{
 	auto a=joinRStream([MemRStream()]);
+}
+
+auto sjoinRStream(R)(R r){//saveable join stream, MAKE SURE R.save CALLS R.front.save
+	//maybe use sjoinRStream(cache(map!(a=>a.save)(your_range_varible_here)))
+	return JoinRStream!(R,true)(r);
+}
+unittest{
+	import tpool.range;
+	auto a=sjoinRStream([MemRStream()].map!(a=>a.save).cache);
 }
