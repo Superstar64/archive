@@ -21,7 +21,7 @@ struct ChunkRange(S,bool checkCrc=true) if(isRStream!S){//carefull constructer p
 	
 	this(S stream_){
 		stream=BigEndianRStream!(S)(stream_);
-		popFront();
+		getNext();
 	}
 	this(BigEndianRStream!S stream_,Chunk front_,bool first_,bool empty_){//raw constructor
 		stream=stream_;
@@ -34,24 +34,24 @@ struct ChunkRange(S,bool checkCrc=true) if(isRStream!S){//carefull constructer p
 	bool first=true;
 	bool empty;
 	@property void popFront(){
-		if(first){
-			first=false;
+		front.stream.skip(uint.max);//reach the end of the chunk to fill the crc
+		static if(checkCrc){
+			stream=typeof(stream)(front.stream.stream.stream);//rewrap S into BigEndianRStream!S
 		}else{
-			front.stream.skip(uint.max);//reach the end of the chunk to fill the crc
-			static if(checkCrc){
-				stream=typeof(stream)(front.stream.stream.stream);//rewrap S into BigEndianRStream!S
-			}else{
-				stream=typeof(stream)(front.stream.stream);//rewrap S into BigEndianRStream!S
-			}
-			auto crc=stream.read!uint;
-			static if(checkCrc){
-				enforce(crc==front.stream.stream.crc);
-			}
-			empty=stream.eof;
-			if(empty){
-				return;
-			}
+			stream=typeof(stream)(front.stream.stream);//rewrap S into BigEndianRStream!S
 		}
+		auto crc=stream.read!uint;
+		static if(checkCrc){
+			enforce(crc==front.stream.stream.crc);
+		}
+		empty=stream.eof;
+		if(empty){
+			return;
+		}
+		getNext();
+	}
+	
+	private void getNext(){
 		auto len=stream.read!uint;
 		static if(checkCrc){
 			auto crcstream=Crc32RStream!(S)(stream.stream);
