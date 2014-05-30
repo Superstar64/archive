@@ -1,3 +1,4 @@
+module tpool.range;
 import std.range;
 import tpool.stream.common:autoSave;
 struct Cache(R,F) if(isInputRange!R){
