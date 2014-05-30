@@ -67,7 +67,12 @@ unittest {
 	assert(stream.eof);
 	assert(buf2==[1,512,259]);
 }
-
+auto bigEndianRStream(bool check=true,S)(S s){
+	return BigEndianRStream!(S,check)(s);
+}
+unittest{
+	auto a=bigEndianRStream(MemRStream());
+}
 
 struct LittleEndianRStream(S,bool check=true) if(isRStream!S){//if check is true then it check if readFill a aligned amount of data
 	import std.exception;
@@ -121,6 +126,13 @@ unittest {
 	assert(stream.readAr(buf2)==3);
 	assert(stream.eof);
 	assert(buf2==[1,512,259]);
+}
+
+auto littleEndianRStream(bool check=true,S)(S s){
+	return LittleEndianRStream!(S,check)(s);
+}
+unittest{
+	auto a=littleEndianRStream(MemRStream());
 }
 
 class EofBeforeLength:Exception{
@@ -208,7 +220,12 @@ unittest {
 	assert(len==1);
 	assert(stream.eof);
 }
-
+auto limitRStream(bool excepOnEof=true,S)(S s){
+	return LimitRStream!(S,excepOnEof)(s);
+}
+unittest{
+	auto a=limitRStream(MemRStream());
+}
 unittest {
 	ubyte[12] buf=[0,1,0,0, 5,1,   1,0,  0,2, 3,1];
 	auto stream=LimitRStream!MemRStream(MemRStream(buf),4);
@@ -256,7 +273,6 @@ struct RangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as
 	}
 	mixin autoSave!(stream,_buf,_eof);
 }
-
 unittest{
 	ubyte[12] array=[0,0,1,0,1,5,0,1,2,0,1,3];
 	ubyte[4] buf=void;
@@ -274,6 +290,14 @@ unittest{
 	assert(chunker.front==[]);
 }
 
+auto rangeRStream(Btype=ubyte,S)(S stream,Btype[] buf){
+	return RangeRStream!(S,Btype)(stream,buf);
+}
+unittest{
+	ubyte[1] buf;
+	auto a=rangeRStream(MemRStream(),buf);
+}
+
 struct AllRStream(S) if(isRStream!S) {//a stream that throws a exception when a buffer is not fully filled
 	S s;//stream
 	alias stream=s;
@@ -289,6 +313,7 @@ struct AllRStream(S) if(isRStream!S) {//a stream that throws a exception when a 
 	}
 	mixin autoSave!s;
 }
+
 unittest{
 	ubyte[7] buf;
 	auto str= BigEndianRStream!(AllRStream!MemRStream)(AllRStream!MemRStream(MemRStream(buf)));
@@ -301,6 +326,14 @@ unittest{
 	}
 	assert(a);
 }
+
+auto allRStream(S)(S s){
+	return AllRStream!S(s);
+}
+unittest{
+	auto a=allRStream(MemRStream());
+}
+
 struct RawRStream(S,T,bool check=true) if(isRStream!S){
 	S stream;
 	alias stream this;
@@ -333,7 +366,12 @@ unittest {
 	assert(b2=="bc");
 	assert(s.eof);
 }
-
+auto rawRStream(Type,bool check=true,S)(S stream){
+	return RawRStream!(S,Type,check)(stream);
+}
+unittest{
+	auto a=rawRStream!ubyte(MemRStream());
+}
 struct ZlibRStream(S,bool QuitOnStreamEnd=false) if(isRStream!S){//buffers, reads more than needed
 	import etc.c.zlib;
 	S stream;
@@ -474,6 +512,14 @@ unittest{import std.zlib;import std.stdio;
 	assert(buf2[0..6]==" world");
 	assert(zs.eof);
 }
+import etc.c.zlib;
+auto zlibRStream(bool QuitOnStreamEnd=false,S)(S s,void[] buf,z_stream z=z_stream.init){
+	return ZlibRStream!(S,QuitOnStreamEnd)(s,buf,z);
+}
+unittest{
+	ubyte[1] buf;
+	auto a=zlibRStream(MemRStream(),buf);
+}
 struct Crc32RStream(S) if(isRStream!S){
 	import etc.c.zlib;
 	S stream;alias Stream=stream;alias stream this;
@@ -487,6 +533,7 @@ struct Crc32RStream(S) if(isRStream!S){
 		return len;
 	}
 }
+
 unittest{
 	import std.zlib;
 	enum ubyte[] source=[3,4,5,9,0];
@@ -495,6 +542,13 @@ unittest{
 	auto res=crc32(0,source);
 	str.skip(1000);
 	assert(str.crc==res);
+}
+
+auto crc32RStream(S)(S s){
+	return Crc32RStream!(S)(s);
+}
+unittest{
+	auto a=crc32RStream(MemRStream());
 }
 
 struct Adler32RStream(S) if(isRStream!S){
@@ -519,6 +573,14 @@ unittest{
 	str.skip(1000);
 	assert(str.adler==res);
 }
+
+auto adler32RStream(S)(S s){
+	return Adler32RStream!(S)(s);
+}
+unittest{
+	auto a=adler32RStream(MemRStream());
+}
+
 //Left Right stream
 //you can chain these together eg: LRStream!(MemRStream,LRStream(MemRStream,MemRStream))
 struct LRStream(S1,S2) if(isRStream!S1 && isRStream!S2){// a stream that reads from the first until it's empty then reads from the second
@@ -609,7 +671,12 @@ unittest{
 	
 	assert(str.eof);
 }
-
+auto lrStream(S1,S2)(S1 s1,S2 s2){
+	return LRStream!(S1,S2)(s1,s2);
+}
+unittest{
+	auto a=lrStream(MemRStream(),MemRStream());
+}
 struct JoinRStream(R) if(isInputRange!R && isRStream!(ElementType!R)){
 	R range;
 	bool eof;
@@ -676,4 +743,10 @@ unittest{
 	assert(buf[0..1]==[2]);
 	assert(stream.skip(uint.max)==8);
 	assert(stream.eof);
+}
+auto joinRStream(R)(R r){
+	return JoinRStream!R(r);
+}
+unittest{
+	auto a=joinRStream([MemRStream()]);
 }

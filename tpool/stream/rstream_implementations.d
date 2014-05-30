@@ -53,7 +53,7 @@ unittest{
 	assert(temp[0]==200);
 	assert(s.eof);
 }
-
+alias memRStream=MemRStream;
 
 struct FileRStream(bool seekable=true){
 	import std.stdio;
@@ -142,4 +142,11 @@ debug(rstream_file){
 			fs.skip(16);
 		}
 	}
+}
+import std.stdio;
+auto fileRStream(bool seekable=true)(File f){
+	return FileRStream!(seekable)(f);
+}
+unittest{
+	auto f=fileRStream(stdin);
 }

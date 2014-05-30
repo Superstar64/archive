@@ -59,6 +59,12 @@ unittest{
 	assert((cast(ubyte[])s.stream.array)==(cast(ubyte[])[0,10,0,1,0,3]));
 }
 
+auto bigEndianWStream(S ,size_t bufsize=1024)(S s){
+	return BigEndianWStream!(S,bufsize)(s);
+}
+unittest{
+	auto a=bigEndianWStream(MemWStream());
+}
 struct LittleEndianWStream(S,size_t bufsize=1024) if(isWStream!S){
 	S stream;
 	alias stream this;
@@ -110,7 +116,12 @@ unittest{
 	s.writeAr(cast(ushort[])[1,3]);
 	assert((cast(ubyte[])s.stream.array)==(cast(ubyte[])[10,0,1,0,3,0]));
 }
-
+auto littleEndianWStream(S ,size_t bufsize=1024)(S s){
+	return LittleEndianWStream!(S,bufsize)(s);
+}
+unittest{
+	auto a=littleEndianWStream(MemWStream());
+}
 
 struct WStreamRange(S) if(isWStream!S){//converts a wstream into a range
 	S stream;
@@ -121,7 +132,9 @@ struct WStreamRange(S) if(isWStream!S){//converts a wstream into a range
 unittest{
 	static assert(isOutputRange!(WStreamRange!(MemWStream),const void[]));
 }
-
+auto wStreamRange(S)(S s){//todo unittest
+	return WStreamRange!S(s);
+}
 struct RangeWStream(R) if(isOutputRange!(R,const void[])){//converts a range to a wstream
 	import std.traits;
 	R range;
@@ -138,7 +151,9 @@ unittest{
 	static assert(isWStream!(RangeWStream!(Temp)));
 	
 }
-
+auto rangeWStream(S)(S s){//todo unittest
+	return RangeWStream!(S)(s);
+}
 struct MultiPipeWStream(S...){//pipe single write stream to mulitple,
 	S streams;
 	void writeFill(in void[] buf){
@@ -201,7 +216,12 @@ unittest{
 	}
 	static assert(isDisposeWStream!Temp);
 }
-
+auto multiPipeWStream(S...)(S s){
+	return MultiPipeWStream!(S)(s);
+}
+unittest{
+	auto a=multiPipeWStream(MemWStream(),MemWStream());
+}
 struct CountWStream(S) if(isWStream!S){
 	S stream;
 	ulong len;
@@ -217,7 +237,12 @@ unittest {
 	stream.write(cast(int)5);
 	assert(stream.stream.len==4);
 }
-
+auto countWStream(S)(S s){
+	return CountWStream!(S)(s);
+}
+unittest{
+	auto a=countWStream(MemWStream());
+}
 
 struct ZlibWStream(S) if(isWStream!S){
 	import etc.c.zlib;import std.exception;
@@ -277,7 +302,10 @@ unittest{
 	import std.zlib;
 	assert(uncompress(a.stream.array)==(cast(int[])[0,1,2,3,4,5]));
 }
-
+import etc.c.zlib;
+auto zlibWStream(S)(S s,void[] buf,int compress=-1,z_stream z=z_stream.init){
+	return ZlibWStream!(S)(s,buf,compress,z);
+}
 
 struct RawWStream(S,T) if(isWStream!S){//writes exactly from memory
 	S stream;
@@ -297,7 +325,12 @@ unittest {
 	s.write('b');
 	assert(cast(char[])(s.array)=="ab");
 }
-
+auto rawWStream(T,S)(S s){
+	return RawWStream!(S,T)(s);
+}
+unittest {
+	auto a=rawWStream!ubyte(MemWStream());
+}
 struct Crc32WStream(S) if(isWStream!S){//todo: unittest
 	import etc.c.zlib;
 	S Stream;alias stream=Stream;alias stream this;
@@ -312,7 +345,12 @@ unittest{
 	static assert(isWStream!((typeof(stream))));
 	
 }
-
+auto crc32WStream(S)(S s){
+	return Crc32WStream!S(s);
+}
+unittest{
+	auto a=crc32WStream(MemWStream());
+}
 struct Adler32WStream(S) if(isWStream!S){//todo: unittest
 	import etc.c.zlib;
 	S Stream;alias stream=Stream;alias stream this;
@@ -325,4 +363,10 @@ struct Adler32WStream(S) if(isWStream!S){//todo: unittest
 unittest{
 	auto stream=Adler32WStream!MemWStream(MemWStream());
 	static assert(isWStream!((typeof(stream))));
+}
+auto adler32WStream(S)(S s){
+	return Adler32WStream!S(s);
+}
+unittest{
+	auto a=adler32WStream(MemWStream());
 }
