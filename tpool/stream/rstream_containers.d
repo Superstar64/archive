@@ -417,6 +417,7 @@ struct ZlibRStream(S,bool QuitOnStreamEnd=false) if(isRStream!S){//buffers, read
 		}else{
 			if(res==Z_STREAM_END){
 				enforce(zstream.avail_in==0);
+				enforce(stream.eof);
 			}
 		}
 		if(zstream.avail_in==0){
