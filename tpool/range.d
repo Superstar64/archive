@@ -136,3 +136,10 @@ unittest {
 	static assert(isForwardRange!(typeof(range)));
 	assert(range.array==[0,1]);
 }
+
+auto ccRange(alias gfront,alias gempty2)(){//create cache Range
+	return cRange!(gfront,()=>true).cache.oEmpty!(gempty2);
+}
+unittest{
+	auto range=ccRange!(()=>4,a=>a.front==4);
+}
