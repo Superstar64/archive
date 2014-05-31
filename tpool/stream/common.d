@@ -28,11 +28,11 @@ template isStringType(T){
 
 mixin template autoSave(alias sub,Args...){//provides a default save, calling the constructer with the args provided, STREAM TYPE SHOULD BE THE FIRST IN THE CONSTRUCTER AND THE FIRST TYPE IN THIS LIST
 	import std.traits;
-	static if(hasMember!(typeof(sub),"save")){
-		static if(is(typeof (sub.save)==typeof(sub))){
-			@property auto save(){
-				return typeof(this)(sub.save,Args);
-			}
+	static if(is(typeof((inout int=0){
+			typeof(sub) a=sub.save;
+	}))){			
+		@property auto save(){
+			return typeof(this)(sub.save,Args);
 		}
 	}
 }
