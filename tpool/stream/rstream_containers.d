@@ -445,6 +445,9 @@ struct ZlibRStream(S,bool QuitOnStreamEnd=false) if(isRStream!S){//buffers, read
 		assert(buf.length!=0);
 		buf=buf[0..stream.readFill(buf)];
 		eof_=l!=buf.length;
+		if(eof_){
+			zstream.avail_in=buf.length;
+		}
 	}
 	
 	@property void close(bool sub=true){
