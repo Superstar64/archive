@@ -458,6 +458,10 @@ struct ZlibRStream(S,bool QuitOnStreamEnd=false) if(isRStream!S){//buffers, read
 			}
 		}
 	}
+	
+	@property auto getRemainBuf(){
+		return zstream.next_in[0..zstream.avail_in];
+	}
 }
 
 unittest{import std.zlib;import std.stdio;
