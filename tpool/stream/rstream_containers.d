@@ -372,7 +372,7 @@ auto rawRStream(Type,bool check=true,S)(S stream){
 unittest{
 	auto a=rawRStream!ubyte(MemRStream());
 }
-struct ZlibRStream(S,bool QuitOnStreamEnd=false) if(isRStream!S){//buffers, reads more than needed
+struct ZlibRStream(S,bool QuitOnStreamEnd=false,alias init=inflateInit) if(isRStream!S){//buffers, reads more than needed
 	import etc.c.zlib;
 	S stream;
 	z_stream_s zstream;alias z_stream_s=z_stream;
@@ -397,7 +397,7 @@ struct ZlibRStream(S,bool QuitOnStreamEnd=false) if(isRStream!S){//buffers, read
 		reloadbuf();
 		zstream.next_in=cast(typeof(zstream.next_in))buf.ptr;
 		zstream.avail_in=cast(typeof(zstream.avail_in))buf.length;
-		enforce(inflateInit(&zstream)==Z_OK);
+		enforce(init(&zstream)==Z_OK);
 	}
 	
 	
@@ -521,8 +521,8 @@ unittest{import std.zlib;import std.stdio;
 	assert(zs.eof);
 }
 import etc.c.zlib;
-auto zlibRStream(bool QuitOnStreamEnd=false,S)(S s,void[] buf,z_stream z=z_stream.init){
-	return ZlibRStream!(S,QuitOnStreamEnd)(s,buf,z);
+auto zlibRStream(bool QuitOnStreamEnd=false,alias init=inflateInit,S)(S s,void[] buf,z_stream z=z_stream.init){
+	return ZlibRStream!(S,QuitOnStreamEnd,init)(s,buf,z);
 }
 unittest{
 	ubyte[1] buf;

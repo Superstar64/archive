@@ -244,7 +244,7 @@ unittest{
 	auto a=countWStream(MemWStream());
 }
 
-struct ZlibWStream(S) if(isWStream!S){
+struct ZlibWStream(S,alias init=deflateInit) if(isWStream!S){
 	import etc.c.zlib;import std.exception;
 	S stream;
 	z_stream_s zstream;alias z_stream_s=z_stream;
@@ -255,7 +255,7 @@ struct ZlibWStream(S) if(isWStream!S){
 		zstream=zstream_;
 		zstream.next_out=cast(typeof(zstream.next_out)) buf.ptr;
 		zstream.avail_out=cast(typeof(zstream.avail_out)) buf.length;
-		enforce(deflateInit(&zstream,compressLev)==Z_OK);
+		enforce(init(&zstream,compressLev)==Z_OK);
 	}
 	
 	void writeFill(const void[] data,int flushlev=Z_NO_FLUSH){
@@ -303,8 +303,8 @@ unittest{
 	assert(uncompress(a.stream.array)==(cast(int[])[0,1,2,3,4,5]));
 }
 import etc.c.zlib;
-auto zlibWStream(S)(S s,void[] buf,int compress=-1,z_stream z=z_stream.init){
-	return ZlibWStream!(S)(s,buf,compress,z);
+auto zlibWStream(alias init=deflateInit,S)(S s,void[] buf,int compress=-1,z_stream z=z_stream.init){
+	return ZlibWStream!(S,init)(s,buf,compress,z);
 }
 
 struct RawWStream(S,T) if(isWStream!S){//writes exactly from memory
