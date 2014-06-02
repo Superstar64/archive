@@ -4,7 +4,7 @@ struct FileWStream{
 	import std.stdio;
 	File file;
 	
-	void writeFill(void[] buf){
+	void writeFill(const void[] buf){
 		file.rawWrite(buf);
 	}
 	@property{
@@ -16,6 +16,9 @@ struct FileWStream{
 			file.close();
 		}
 	}
+}
+unittest{
+	static assert(isWStream!FileWStream);
 }
 alias fileWStream=FileWStream;
 struct MemWStream{
