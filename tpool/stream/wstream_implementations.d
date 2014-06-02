@@ -17,7 +17,7 @@ struct FileWStream{
 		}
 	}
 }
-alias fileWSteam=FileWStream;
+alias fileWStream=FileWStream;
 struct MemWStream{
 	import std.typecons;
 	void[] array;
