@@ -395,8 +395,6 @@ struct ZlibRStream(S,bool QuitOnStreamEnd=false,alias init=inflateInit) if(isRSt
 		buf=buf_;
 		assert(buf.length>0);
 		reloadbuf();
-		zstream.next_in=cast(typeof(zstream.next_in))buf.ptr;
-		zstream.avail_in=cast(typeof(zstream.avail_in))buf.length;
 		enforce(init(&zstream)==Z_OK);
 	}
 	
@@ -445,6 +443,8 @@ struct ZlibRStream(S,bool QuitOnStreamEnd=false,alias init=inflateInit) if(isRSt
 		assert(buf.length!=0);
 		buf=buf[0..stream.readFill(buf)];
 		eof_=l!=buf.length;
+		zstream.next_in=cast(typeof(zstream.next_in))buf.ptr;
+		zstream.avail_in=cast(typeof(zstream.avail_in))buf.length;
 		if(eof_){
 			zstream.avail_in=buf.length;
 		}
