@@ -193,16 +193,15 @@ struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, r
 			auto seek(){
 				return limit;
 			}
+			bool eof(){
+				return limit==0;
+			}
 		}else static if(isSeekableRStream!(S)){
 			auto seek(){
 				import std.math;
 				return min(limit,stream.seek);
 			}
-		}
-		
-		bool eof(){
-			return limit==0;
-		}
+		}		
 	}
 	mixin autoSave!(stream,limit);
 }
