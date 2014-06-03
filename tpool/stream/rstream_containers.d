@@ -700,7 +700,7 @@ struct JoinRStream(R,bool allowsave=false) if(isInputRange!R && isRStream!(Eleme
 		mixin seekEof;
 	}
 	static  if(allowsave && isForwardRange!R){
-		mixin autoSave!(range);
+		mixin autoSave!(range,eof_);
 	}
 }
 unittest{
