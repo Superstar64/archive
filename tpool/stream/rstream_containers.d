@@ -450,10 +450,7 @@ auto zlibRStream(alias init=inflateInit,S)(S s,void[] buf){
 
 unittest{
 	ubyte[1] buf;
-	static assert(is(typeof((inout int=0)
-	{
-		auto a=zlibRStream(MemRStream(),buf);
-	})));
+	auto a=zlibRStream(MemRStream(),buf);
 }
 
 unittest{import std.zlib;import std.stdio;
