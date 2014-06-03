@@ -200,7 +200,11 @@ struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, r
 				return min(limit,stream.seek);
 			}
 			mixin seekEof;
-		}		
+		}else static if(isCheckableRStream!S){
+			auto eof(){
+				return limit==0 ||stream.eof;
+			}
+		}
 	}
 	mixin autoSave!(stream,limit);
 }
