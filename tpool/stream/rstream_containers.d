@@ -199,6 +199,7 @@ struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, r
 				import std.math;
 				return min(limit,stream.seek);
 			}
+			mixin seekEof;
 		}		
 	}
 	mixin autoSave!(stream,limit);
