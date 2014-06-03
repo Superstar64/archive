@@ -6,13 +6,12 @@ public import tpool.stream.common;
 public import tpool.stream.rstream_containers;
 public import tpool.stream.rstream_implementations;
 
-alias RStreamTur=TypeTuple!(RStream_,MarkableRStream_,SeekableRStream_,TypeRStream_,DisposeRStream_);
+alias RStreamTur=TypeTuple!(RStream_,CheckableRStream_,MarkableRStream_,SeekableRStream_,TypeRStream_,DisposeRStream_);
 
 //ReadStream
 interface RStream_{//assigning or copying may make this stream invalid
 	size_t readFill(void[] buf);//reads as much as possible into buf, when the return val is not equal to buf.length ,eof is assumed
 	size_t skip(size_t len);//skips len bytes,returns bytes skiped, if the return val is not equal to buf.length, eof is assumed
-	@property bool eof();//i want you to guess what this returns
 	template IS(S){enum IS=isRStream!S;}
 }
 template isRStream(S){// thanks for std.range for nice exapmle code of this
@@ -21,7 +20,6 @@ template isRStream(S){// thanks for std.range for nice exapmle code of this
 		
 		size_t len=s.readFill(a);
 		size_t le=s.skip(b);
-		bool end=s.eof;
 	}));
 }
 unittest{
@@ -30,6 +28,19 @@ unittest{
 	static assert(!isRStream!(Emp));
 }
 
+interface CheckableRStream_:RStream_{
+	@property bool eof();//i want you to guess what this returns
+	template IS(S){enum IS=isCheckableRStream!S;}
+}
+template isCheckableRStream(S){
+	enum bool isCheckableRStream=isRStream!S && is(typeof((inout int=0){
+		S s=void;
+		bool end=s.eof;
+	}));
+}
+unittest{
+	static assert(isCheckableRStream!(MemRStream));
+}
 //a stream that can save the curren position
 interface MarkableRStream_:RStream_{
 	@property typeof(this) save();//saves current pos to the return value
@@ -175,7 +186,9 @@ class RStreamWrap(S,Par=Object):Par,RStreamInterfaceOf!(S) {//need to find a bet
 	override{
 		size_t readFill(void[] b){return raw.readFill(b);}
 		size_t skip(size_t b){return raw.skip(b);}
-		@property bool eof(){return raw.eof;}
+		static if(isCheckableRStream!S){
+			@property bool eof(){return raw.eof;}
+		}
 		static if(isMarkableRStream!S){
 			@property typeof(this) save(){return new RStreamWrap(raw);}
 		}
