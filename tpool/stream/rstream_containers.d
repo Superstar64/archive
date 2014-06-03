@@ -372,96 +372,88 @@ auto rawRStream(Type,bool check=true,S)(S stream){
 unittest{
 	auto a=rawRStream!ubyte(MemRStream());
 }
-struct ZlibRStream(S,bool QuitOnStreamEnd=false,alias init=inflateInit) if(isRStream!S){//buffers, reads more than needed
-	import etc.c.zlib;
-	S stream;
-	z_stream_s zstream;alias z_stream_s=z_stream;
-	void[] buf;
-	bool eof_;//end of buffering
-	bool eof;//end of stream
-	
-	mixin autoSave!(stream,zstream,buf,eof_,eof);
-	this(S stream_,z_stream_s zstream_,void []buf_,bool eof_0,bool eof0){//raw costructer plese ignore
-		stream=stream_;
-		inflateCopy(&zstream,&zstream_);
-		buf=buf_;
-		eof_=eof_0;
-		eof=eof0;
+import etc.c.zlib;
+struct ZlibIRangeRStream(R, alias init=inflateInit) if(isInputRange!R){
+	R range;
+	z_stream zstream;
+	bool eof;
+	mixin readSkip;
+	mixin autoSave!(range,zstream,eof);
+	this(R range_){
+		range=range_;
+		assert(range.front.ptr==range.front.ptr);//sanity test
+		assert(range.front.length==range.front.length);
+		zstream.next_in=cast(typeof(zstream.next_in))range.front.ptr;
+		zstream.avail_in=cast(typeof(zstream.avail_in))range.front.length;
+		init(&zstream);
 	}
 	
-	this(S stream_,void[] buf_,z_stream_s z=z_stream_s.init){
-		zstream=z;
-		stream=stream_;
-		buf=buf_;
-		assert(buf.length>0);
-		reloadbuf();
-		enforce(init(&zstream)==Z_OK);
+	this(R range_,z_stream z,bool eof_){//raw constructer plese ignore
+		range=range_;
+		enforce(inflateCopy(&zstream,&z)==Z_OK);
+		zstream.next_in=cast(typeof(zstream.next_in))range.front.ptr;
+		zstream.avail_in=cast(typeof(zstream.avail_in))range.front.length;
+		eof=eof_;
 	}
-	
-	
-	size_t readFill(void[] data) out(_outLength) {assert(_outLength<=data.length ); } body{
-		if(data.length==0||eof){
+	private auto refill(){
+		range.popFront();
+		if(range.empty){
+			return true;
+		}
+		assert(range.front.ptr);
+		assert(range.front.length!=0);
+		zstream.next_in=cast(typeof(zstream.next_in))range.front.ptr;
+		zstream.avail_in=cast(typeof(zstream.avail_in))range.front.length;
+		return false;
+	}
+	size_t readFill(void[] buf){
+		if(eof){
 			return 0;
 		}
-		zstream.next_out=cast(typeof(zstream.next_out))data.ptr;
-		zstream.avail_out=cast(typeof(zstream.avail_out))data.length;
+		zstream.next_out=cast(typeof(zstream.next_out))buf.ptr;
+		zstream.avail_out=cast(typeof(zstream.avail_out))buf.length;
 	start:
-		auto res=inflate(&zstream,Z_SYNC_FLUSH);
-		enforce(res==Z_OK||res==Z_STREAM_END);
-		static if(QuitOnStreamEnd){
-			if(res==Z_STREAM_END){
-				goto end;
-			}
-		}else{
-			if(res==Z_STREAM_END){
-				enforce(zstream.avail_in==0);
-				enforce(stream.eof);
-			}
+		auto ret=inflate(&zstream,Z_SYNC_FLUSH);
+		if(ret==Z_STREAM_END){
+			eof=true;
+			return buf.length-zstream.avail_out;
 		}
+		enforce(ret==Z_OK);
 		if(zstream.avail_in==0){
-			if(eof_){
-	end:
-				auto ret=data.length-zstream.avail_out;
+			if(refill()){
 				eof=true;
-				return ret;
-			}else{
-				reloadbuf();
-				goto start;//sorry
+				return buf.length-zstream.avail_out;
 			}
-		}
-		
-		if(zstream.avail_out==0){
-			return data.length;
-		}
-		throw new Exception("something went wrong with zlib");
-	}
-	
-	mixin readSkip;
-	
-	void reloadbuf(){
-		auto l=buf.length;
-		assert(buf.length!=0);
-		buf=buf[0..stream.readFill(buf)];
-		eof_=l!=buf.length;
-		zstream.next_in=cast(typeof(zstream.next_in))buf.ptr;
-		zstream.avail_in=cast(typeof(zstream.avail_in))buf.length;
-		if(eof_){
-			zstream.avail_in=buf.length;
+			goto start;
+		}else{
+			assert(zstream.avail_out==0);
+			return buf.length;
 		}
 	}
-	
-	@property void close(bool sub=true){
+	@property void close(){
 		inflateEnd(&zstream);
-		if(sub){			
-			static if(isDisposeRStream!S){
-				stream.close();
-			}
-		}
 	}
-	
-	@property auto getRemainBuf(){
-		return zstream.next_in[0..zstream.avail_in];
+}
+auto zlibIRangeRStream(alias init=inflateInit,R)(R range){
+	return ZlibIRangeRStream!(R,init)(range);
+}
+struct ZlibRStream(S,alias init=inflateInit) if(isRStream!S){//buffers, reads more than needed
+	ZlibIRangeRStream!(RangeRStream!(S,void),init) stream; alias stream this;
+	this(S stream_,void[] buf){
+		auto brange=rangeRStream(stream_,buf);
+		stream=zlibIRangeRStream!(init)(brange);
 	}
+}
+auto zlibRStream(alias init=inflateInit,S)(S s,void[] buf){
+	return ZlibRStream!(S,init)(s,buf);
+}
+
+unittest{
+	ubyte[1] buf;
+	static assert(is(typeof((inout int=0)
+	{
+		auto a=zlibRStream(MemRStream(),buf);
+	})));
 }
 
 unittest{import std.zlib;import std.stdio;
@@ -497,7 +489,7 @@ unittest{import std.zlib;import std.stdio;
 	auto input=compress("hello world");//data
 	input~=cast(ubyte[])[4,1];//test for ZlibRStream!true
 	ubyte[10] buf2;		//output buf
-	auto zs=ZlibRStream!(MemRStream,true)(MemRStream(input),buf);
+	auto zs=ZlibRStream!(MemRStream)(MemRStream(input),buf);
 	
 	scope(exit) zs.close;
 	
@@ -520,14 +512,7 @@ unittest{import std.zlib;import std.stdio;
 	assert(buf2[0..6]==" world");
 	assert(zs.eof);
 }
-import etc.c.zlib;
-auto zlibRStream(bool QuitOnStreamEnd=false,alias init=inflateInit,S)(S s,void[] buf,z_stream z=z_stream.init){
-	return ZlibRStream!(S,QuitOnStreamEnd,init)(s,buf,z);
-}
-unittest{
-	ubyte[1] buf;
-	auto a=zlibRStream(MemRStream(),buf);
-}
+
 struct Crc32RStream(S) if(isRStream!S){
 	import etc.c.zlib;
 	S stream;alias Stream=stream;alias stream this;
