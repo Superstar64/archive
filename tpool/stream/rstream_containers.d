@@ -235,7 +235,7 @@ unittest {
 	assert(stream.eof);
 }
 
-struct RangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as a range
+struct RangeRStream(S,BufType=ubyte) if(isCheckableRStream!S){//streams chunks of data as a range
 	S stream;
 	alias stream this;
 	BufType[] _buf;
@@ -258,7 +258,7 @@ struct RangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as
 		
 		void popFront(){
 			auto len=stream.readFill(_buf);
-			if(len!=_buf.length){
+			if(len!=_buf.length||stream.eof){
 				_eof=true;
 				_buf=_buf[0..len];
 			}
