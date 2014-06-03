@@ -5,7 +5,7 @@ import tpool.stream.rstream;
 import std.range;
 import std.exception: enforce;
 
-struct ChunkRange(S,bool checkCrc=true) if(isRStream!S){//carefull constructer pops first chunk imidately
+struct ChunkRRange(S,bool checkCrc=true) if(isCheckableRStream!S){//carefull constructer pops first chunk imidately
 	struct Chunk{//type used for reading chunk
 		char[4] name;
 		static if(checkCrc){
@@ -64,21 +64,23 @@ struct ChunkRange(S,bool checkCrc=true) if(isRStream!S){//carefull constructer p
 	}
 	mixin autoSave!(stream,front,first,empty);
 }
-
+auto chunkRRange(bool checkCrc=true,S)(S stream){
+	return ChunkRRange!(S,checkCrc)(stream);
+}
 version(chunk_test){
-	void main(string args[]){
+	void main(string args[]){//todo use FileRStream later
 		import std.stdio;import std.file;
 		if(args.length<2){
 			writeln("no arguments");
 			return;
 		}
-		auto fstream=FileRStream!false(File(args[1]));
+		auto fstream=FileRStream!true(File(args[1]));
 		ubyte[8] sig;
 		fstream.readFill(sig);
 		enforce(sig==[0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]);
 		writeln(sig);
 		
-		auto chunks=ChunkRange!(typeof(fstream))  (fstream);
+		auto chunks=chunkRRange(fstream);
 		static assert(isInputRange!(typeof(chunks)));
 		foreach(i;chunks){
 			writeln("name  :",i.name);
@@ -103,7 +105,7 @@ version(chunk_test2){//save and no crc test
 		enforce(sig==[0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]);
 		writeln(sig);
 		
-		auto chunks=ChunkRange!(typeof(fstream),false)  (fstream);
+		auto chunks=chunkRRange(fstream);
 		static assert(isForwardRange!(typeof(chunks)));
 		foreach(i;chunks.save){
 			writeln("name  :",i.name);
