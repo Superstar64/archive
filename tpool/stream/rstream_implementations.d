@@ -59,19 +59,6 @@ struct FileRStream(bool seekable=true){
 	import std.stdio;
 	File file;
 	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body{
-		static if(!seekable){
-			if(peeked){
-				if(eof||buf.length==0){
-					return 0;
-				}
-				(cast(ubyte[])(buf))[0]=extra;
-				peeked=false;
-				if(buf.length==1){
-					return 1;
-				}
-				return file.rawRead(buf[1..$]).length+1;
-			}
-		}
 		if(buf.length==0){
 			return 0;
 		}
@@ -92,31 +79,12 @@ struct FileRStream(bool seekable=true){
 					return size;
 				}
 			}
-		}else{
-			mixin readSkip;
-		}
-		static if(seekable){
 			bool eof(){
 				return seek==0;
 			}
 		}else{
-			private{
-				bool peeked;
-				ubyte extra;
-				bool eof_;
-			}
-			bool eof(){
-				if(peeked){
-					return eof_;
-				}else{
-					extra=cast(ubyte)file.getFP.getc;
-					peeked=true;
-					eof_=file.eof;
-					return eof_;
-				}
-			}
+			mixin readSkip;
 		}
-		
 		void close(){
 			file.close;
 		}

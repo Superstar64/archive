@@ -375,9 +375,8 @@ import etc.c.zlib;
 struct ZlibIRangeRStream(R, alias init=inflateInit) if(isInputRange!R){
 	R range;
 	z_stream zstream;
-	bool eof;
 	mixin readSkip;
-	mixin autoSave!(range,zstream,eof);
+	mixin autoSave!(range,zstream);
 	this(R range_){
 		range=range_;
 		assert(range.front.ptr==range.front.ptr);//sanity test
@@ -387,12 +386,11 @@ struct ZlibIRangeRStream(R, alias init=inflateInit) if(isInputRange!R){
 		init(&zstream);
 	}
 	
-	this(R range_,z_stream z,bool eof_){//raw constructer plese ignore
+	this(R range_,z_stream z){//raw constructer plese ignore
 		range=range_;
 		enforce(inflateCopy(&zstream,&z)==Z_OK);
 		zstream.next_in=cast(typeof(zstream.next_in))range.front.ptr;
 		zstream.avail_in=cast(typeof(zstream.avail_in))range.front.length;
-		eof=eof_;
 	}
 	private auto refill(){
 		range.popFront();
@@ -406,21 +404,16 @@ struct ZlibIRangeRStream(R, alias init=inflateInit) if(isInputRange!R){
 		return false;
 	}
 	size_t readFill(void[] buf){
-		if(eof){
-			return 0;
-		}
 		zstream.next_out=cast(typeof(zstream.next_out))buf.ptr;
 		zstream.avail_out=cast(typeof(zstream.avail_out))buf.length;
 	start:
 		auto ret=inflate(&zstream,Z_SYNC_FLUSH);
 		if(ret==Z_STREAM_END){
-			eof=true;
 			return buf.length-zstream.avail_out;
 		}
 		enforce(ret==Z_OK);
 		if(zstream.avail_in==0){
 			if(refill()){
-				eof=true;
 				return buf.length-zstream.avail_out;
 			}
 			goto start;
@@ -463,21 +456,17 @@ unittest{import std.zlib;import std.stdio;
 	
 	static assert(isDisposeRStream!(typeof(zs)));
 	static assert(isMarkableRStream!(typeof(zs)));
-	assert(!zs.eof);
 	auto aaa=zs.save;
 	
 	scope(exit) aaa.close;
 	
 	
 	assert(5==zs.readFill(buf2[0..5]));
-	assert(!zs.eof);
 	assert(buf2[0..5]=="hello");
 	assert(5==aaa.readFill(buf2[0..5]));
 	assert(buf2[0..5]=="hello");
-	assert(!aaa.eof);
 	assert(6==zs.readFill(buf2[0..6]));
 	assert(buf2[0..6]==" world");
-	assert(zs.eof);
 }
 
 unittest{import std.zlib;import std.stdio;
@@ -492,21 +481,17 @@ unittest{import std.zlib;import std.stdio;
 	
 	static assert(isDisposeRStream!(typeof(zs)));
 	static assert(isMarkableRStream!(typeof(zs)));
-	assert(!zs.eof);
 	auto aaa=zs.save;
 	
 	scope(exit) aaa.close;
 	
 	
 	assert(5==zs.readFill(buf2[0..5]));
-	assert(!zs.eof);
 	assert(buf2[0..5]=="hello");
 	assert(5==aaa.readFill(buf2[0..5]));
 	assert(buf2[0..5]=="hello");
-	assert(!aaa.eof);
 	assert(6==zs.readFill(buf2[0..6]));
 	assert(buf2[0..6]==" world");
-	assert(zs.eof);
 }
 
 struct Crc32RStream(S) if(isRStream!S){
@@ -576,8 +561,10 @@ struct LRStream(S1,S2) if(isRStream!S1 && isRStream!S2){// a stream that reads f
 	S1 stream1;
 	S2 stream2;
 	bool remain=true;
-	@property bool eof(){
-		return stream1.eof&&stream2.eof;
+	static if(isCheckableRStream!S1&& isCheckableRStream!S2){
+		@property bool eof(){
+			return stream1.eof&&stream2.eof;
+		}
 	}
 	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body{
 		if(remain){
@@ -668,19 +655,18 @@ unittest{
 }
 struct JoinRStream(R,bool allowsave=false) if(isInputRange!R && isRStream!(ElementType!R)){
 	R range;
-	bool eof;
+	bool eof_;
 	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body{
-		if(eof){
+		if(eof_){
 			return 0;
 		}
 		auto sz=range.front.readFill(buf);
 		if(sz==buf.length){
 			return sz;
 		}
-		assert(range.front.eof);
 		range.popFront();
 		if(range.empty){
-			eof=true;
+			eof_=true;
 			return sz;
 		}else{
 			return sz+readFill(buf[sz..$]);
@@ -688,17 +674,16 @@ struct JoinRStream(R,bool allowsave=false) if(isInputRange!R && isRStream!(Eleme
 	}
 	
 	size_t skip(size_t length) out(_outLength) {assert(_outLength<=length ); } body{
-		if(eof){
+		if(eof_){
 			return 0;
 		}
 		auto sz=range.front.skip(length);
 		if(sz==length){
 			return sz;
 		}
-		assert(range.front.eof);
 		range.popFront();
 		if(range.empty){
-			eof=true;
+			eof_=true;
 			return sz;
 		}else{
 			return sz+skip(length-sz);
@@ -713,9 +698,13 @@ struct JoinRStream(R,bool allowsave=false) if(isInputRange!R && isRStream!(Eleme
 			}
 			return sum;
 		}
+		
+		@property bool eof(){
+			return seek==0;
+		}
 	}
 	static  if(allowsave && isForwardRange!R){
-		mixin autoSave!(range,eof);
+		mixin autoSave!(range);
 	}
 }
 unittest{
