@@ -59,12 +59,12 @@ unittest{
 }
 
 //a stream that know exactly how much data is left
-interface SeekableRStream_:RStream_{
+interface SeekableRStream_:CheckableRStream_{
 	@property ulong seek();//returns exactly how much is left in the stream
 	template IS(S){enum IS=isSeekableRStream!S;}
 }
 template isSeekableRStream(S){
-	enum bool isSeekableRStream=isRStream!(S) && 
+	enum bool isSeekableRStream=isCheckableRStream!(S) && 
 		is(typeof((inout int=0){
 			S s=void;
 			static assert(is(ulong==typeof(s.seek)));
@@ -303,6 +303,12 @@ mixin template readSkip(size_t bufsize=2048){
 			}
 		}
 		assert(0);//this should never happen
+	}
+}
+
+mixin template seekEof(){
+	@property bool eof(){
+		return seek==0;
 	}
 }
 //for copy pasting

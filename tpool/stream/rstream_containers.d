@@ -193,9 +193,7 @@ struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, r
 			auto seek(){
 				return limit;
 			}
-			bool eof(){
-				return limit==0;
-			}
+			mixin seekEof;
 		}else static if(isSeekableRStream!(S)){
 			auto seek(){
 				import std.math;
@@ -698,10 +696,7 @@ struct JoinRStream(R,bool allowsave=false) if(isInputRange!R && isRStream!(Eleme
 			}
 			return sum;
 		}
-		
-		@property bool eof(){
-			return seek==0;
-		}
+		mixin seekEof;
 	}
 	static  if(allowsave && isForwardRange!R){
 		mixin autoSave!(range);
