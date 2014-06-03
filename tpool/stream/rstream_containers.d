@@ -263,9 +263,11 @@ struct RangeRStream(S,BufType=ubyte) if(isCheckableRStream!S){//streams chunks o
 		
 		void popFront(){
 			auto len=stream.readFill(_buf);
-			if(len!=_buf.length||stream.eof){
-				_eof=true;
+			if(len!=_buf.length){
 				_buf=_buf[0..len];
+			}
+			if(len==0){
+				_eof=true;
 			}
 		}
 		
@@ -276,7 +278,7 @@ struct RangeRStream(S,BufType=ubyte) if(isCheckableRStream!S){//streams chunks o
 	mixin autoSave!(stream,_buf,_eof);
 }
 unittest{
-	ubyte[12] array=[0,0,1,0,1,5,0,1,2,0,1,3];
+	ubyte[11] array=[0,0,1,0,1,5,0,1,2,0,1];
 	ubyte[4] buf=void;
 	auto chunker=RangeRStream!(MemRStream,ubyte)(MemRStream(array),buf);
 	static assert(isInputRange!(typeof(chunker)));
@@ -286,12 +288,10 @@ unittest{
 	assert(chunker.front==[1,5,0,1]);
 	chunker.popFront;
 	assert(!chunker.empty);
-	assert(chunker.front==[2,0,1,3]);
+	assert(chunker.front==[2,0,1]);
 	chunker.popFront;
 	assert(chunker.empty);
-	assert(chunker.front==[]);
 }
-
 auto rangeRStream(Btype=ubyte,S)(S stream,Btype[] buf){
 	return RangeRStream!(S,Btype)(stream,buf);
 }
