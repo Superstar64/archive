@@ -190,7 +190,7 @@ class RStreamWrap(S,Par=Object):Par,RStreamInterfaceOf!(S) {//need to find a bet
 			@property bool eof(){return raw.eof;}
 		}
 		static if(isMarkableRStream!S){
-			@property typeof(this) save(){return new RStreamWrap(raw);}
+			@property typeof(this) save(){return new RStreamWrap(raw.save);}
 		}
 		
 		static if(isSeekableRStream!S){
