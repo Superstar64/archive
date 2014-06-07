@@ -79,20 +79,15 @@ struct FileRStream(bool seekable=true){
 					return size;
 				}
 			}
-			bool eof(){
-				return seek==0;
+			auto seek(){
+				return file.size-file.tell;
 			}
+			mixin seekEof;
 		}else{
 			mixin readSkip;
 		}
 		void close(){
 			file.close;
-		}
-		
-		static if(seekable){
-			auto seek(){
-				return file.size-file.tell;
-			}
 		}
 	}
 }
