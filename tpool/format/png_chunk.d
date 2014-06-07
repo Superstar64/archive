@@ -5,7 +5,7 @@ import tpool.stream.rstream;
 import std.range;
 import std.exception: enforce;
 
-struct ChunkRRange(S,bool checkCrc=true) if(isCheckableRStream!S){//carefull constructer pops first chunk imidately
+struct ChunkRRange(S,bool checkCrc=true) if(isRStream!S){//carefull constructer pops first chunk imidately
 	struct Chunk{//type used for reading chunk
 		char[4] name;
 		static if(checkCrc){
@@ -44,15 +44,16 @@ struct ChunkRRange(S,bool checkCrc=true) if(isCheckableRStream!S){//carefull con
 		static if(checkCrc){
 			enforce(crc==front.stream.stream.crc);
 		}
-		empty=stream.eof;
-		if(empty){
-			return;
-		}
 		getNext();
 	}
 	
 	private void getNext(){
-		auto len=stream.read!uint;
+		uint[1] temp;
+		if(stream.readAr(temp)==0){
+			empty=true;
+			return;
+		}
+		uint len=temp[0];
 		static if(checkCrc){
 			auto crcstream=Crc32RStream!(S)(stream.stream);
 		}else{
@@ -74,7 +75,7 @@ version(chunk_test){
 			writeln("no arguments");
 			return;
 		}
-		auto fstream=peekRStream(FileRStream!false(File(args[1])));
+		auto fstream=(FileRStream!false(File(args[1])));
 		ubyte[8] sig;
 		fstream.readFill(sig);
 		enforce(sig==[0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]);
