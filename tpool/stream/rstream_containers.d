@@ -741,3 +741,77 @@ unittest{
 	import tpool.range;
 	auto a=sjoinRStream([MemRStream()].map!(a=>a.save).cache);
 }
+
+struct PeekRStream(S){//peeks 1 byte ahead when eof is called to check for eof
+	S stream;
+	bool peek;
+	ubyte peekc;
+	bool _eof;
+	static if(isSeekableRStream!S){
+		pragma(msg,"Warning creating PeekRStream out of SeekableRStream of type ",S);
+	}
+	mixin autoSave!(stream,peek,peekc,_eof);
+	@property bool eof(){
+		if(peek){
+			return _eof;
+		}
+		else{
+			peek=true;
+			ubyte[1] data;
+			auto len=stream.readFill(data);
+			if(len==0){
+				_eof=true;
+				return true;
+			}else{
+				peekc=data[0];
+				return false;
+			}
+		}
+	}
+	
+	auto readFill(void[] mem){
+		if(peek){
+			if(_eof||mem.length==0){
+				return 0;
+			}
+			(cast(ubyte[])(mem))[0]=peekc;
+			peek=false;
+			return 1+stream.readFill(mem[1..$]);
+		}
+		return stream.readFill(mem);
+	}
+	
+	auto skip(size_t size){
+		if(peek){
+			if(_eof||size==0){
+				return 0;
+			}
+			peek=false;
+			return 1+stream.skip(size-1);
+		}
+		return stream.skip(size);
+	}
+}
+
+unittest{
+	ubyte[] data=[3,0,1,0,1,5,0,1,2,0,1,3];
+	auto stream=PeekRStream!(MemRStream)(MemRStream(data));
+	pragma(msg,"Ignore the previous warning, this is a unittest");
+	static assert(isCheckableRStream!((typeof(stream))));
+	static assert(isMarkableRStream!((typeof(stream))));
+	ubyte[10] buf;
+	assert(!stream.eof);
+	assert(stream.readFill(buf[0..2])==2);
+	assert(buf[0..2]==[3,0]);
+	assert(!stream.eof);
+	assert(stream.skip(10)==10);
+	assert(stream.eof);
+}
+auto peekRStream(S)(S s){
+	return PeekRStream!(S)(s);
+}
+unittest{
+	
+	import std.stdio;
+	auto a=peekRStream(fileRStream!false(stdout));
+}
