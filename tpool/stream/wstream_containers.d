@@ -5,6 +5,7 @@ import std.c.stdlib;//i'm dangerous
 import std.typetuple;
 import std.range;
 import std.algorithm;
+//a typed wstream wrapper around a sub wstream
 //bufsize is in data per type not bytes
 struct BigEndianWStream(S,size_t bufsize=1024) if(isWStream!S){//if bufsize == 0 then it calls alloca
 	S stream;
@@ -65,6 +66,7 @@ auto bigEndianWStream(S ,size_t bufsize=1024)(S s){
 unittest{
 	auto a=bigEndianWStream(MemWStream());
 }
+//a typed wstream wrapper around a sub wstream
 struct LittleEndianWStream(S,size_t bufsize=1024) if(isWStream!S){
 	S stream;
 	alias stream this;
@@ -222,7 +224,7 @@ auto multiPipeWStream(S...)(S s){
 unittest{
 	auto a=multiPipeWStream(MemWStream(),MemWStream());
 }
-struct CountWStream(S) if(isWStream!S){
+struct CountWStream(S) if(isWStream!S){//a wstream that counts the amount of bytes written and forwards to a substream
 	S stream;
 	ulong len;
 	
@@ -244,7 +246,7 @@ unittest{
 	auto a=countWStream(MemWStream());
 }
 
-struct ZlibWStream(S,alias init=deflateInit) if(isWStream!S){
+struct ZlibWStream(S,alias init=deflateInit) if(isWStream!S){//a wstream wrapper that uses zlib to compress and forward compress data to a sub stream
 	import etc.c.zlib;import std.exception;
 	S stream;
 	z_stream_s zstream;alias z_stream_s=z_stream;
@@ -331,6 +333,7 @@ auto rawWStream(T,S)(S s){
 unittest {
 	auto a=rawWStream!ubyte(MemWStream());
 }
+//generates crc32 around data written and forwards to sub stream
 struct Crc32WStream(S) if(isWStream!S){//todo: unittest
 	import etc.c.zlib;
 	S Stream;alias stream=Stream;alias stream this;
@@ -351,6 +354,7 @@ auto crc32WStream(S)(S s){
 unittest{
 	auto a=crc32WStream(MemWStream());
 }
+//generates adler32 around data written and forwards to sub stream
 struct Adler32WStream(S) if(isWStream!S){//todo: unittest
 	import etc.c.zlib;
 	S Stream;alias stream=Stream;alias stream this;

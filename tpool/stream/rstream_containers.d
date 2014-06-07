@@ -13,7 +13,7 @@ class EofBadFormat:Exception{
 		super(s);
 	}
 }
-
+//a typed rstream wrapper around a sub rstream
 struct BigEndianRStream(S,bool check=true) if(isRStream!S){//if check is true then it check if readFill a aligned amount of data
 	import std.exception;
 	S stream;
@@ -73,7 +73,7 @@ auto bigEndianRStream(bool check=true,S)(S s){
 unittest{
 	auto a=bigEndianRStream(MemRStream());
 }
-
+//a typed rstream wrapper around a sub rstream
 struct LittleEndianRStream(S,bool check=true) if(isRStream!S){//if check is true then it check if readFill a aligned amount of data
 	import std.exception;
 	S stream;
@@ -336,7 +336,7 @@ unittest{
 	auto a=allRStream(MemRStream());
 }
 
-struct RawRStream(S,T,bool check=true) if(isRStream!S){
+struct RawRStream(S,T,bool check=true) if(isRStream!S){//reads exactly from memory
 	S stream;
 	alias stream this;
 	@property T read(T)(){
@@ -375,7 +375,7 @@ unittest{
 	auto a=rawRStream!ubyte(MemRStream());
 }
 import etc.c.zlib;
-struct ZlibIRangeRStream(R, alias init=inflateInit) if(isInputRange!R){
+struct ZlibIRangeRStream(R, alias init=inflateInit) if(isInputRange!R){//generates a rstream that reads compressed data from a Inputrange of void[] 
 	R range;
 	z_stream zstream;
 	mixin readSkip;
@@ -432,6 +432,7 @@ struct ZlibIRangeRStream(R, alias init=inflateInit) if(isInputRange!R){
 auto zlibIRangeRStream(alias init=inflateInit,R)(R range){
 	return ZlibIRangeRStream!(R,init)(range);
 }
+//a rstream that reads compressed data from a sub rstream
 struct ZlibRStream(S,alias init=inflateInit) if(isRStream!S){//buffers, reads more than needed
 	ZlibIRangeRStream!(RangeRStream!(S,void),init) stream; alias stream this;
 	this(S stream_,void[] buf){
@@ -497,7 +498,7 @@ unittest{import std.zlib;import std.stdio;
 	assert(buf2[0..6]==" world");
 }
 
-struct Crc32RStream(S) if(isRStream!S){
+struct Crc32RStream(S) if(isRStream!S){//generates crc32 around data read
 	import etc.c.zlib;
 	S stream;alias Stream=stream;alias stream this;
 	uint crc;
@@ -528,7 +529,7 @@ unittest{
 	auto a=crc32RStream(MemRStream());
 }
 
-struct Adler32RStream(S) if(isRStream!S){
+struct Adler32RStream(S) if(isRStream!S){//generates crc32 around data read
 	import etc.c.zlib;
 	S stream;alias Stream=stream;alias stream this;
 	uint adler;
@@ -656,7 +657,7 @@ auto lrStream(S1,S2)(S1 s1,S2 s2){
 unittest{
 	auto a=lrStream(MemRStream(),MemRStream());
 }
-struct JoinRStream(R,bool allowsave=false) if(isInputRange!R && isRStream!(ElementType!R)){
+struct JoinRStream(R,bool allowsave=false) if(isInputRange!R && isRStream!(ElementType!R)){//joins a range of rstreams into a single rstream
 	R range;
 	bool eof_;
 	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body{

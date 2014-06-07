@@ -1,6 +1,6 @@
 module tpool.stream.rstream_implementations;
 import tpool.stream.rstream;
-struct MemRStream{
+struct MemRStream{//a rstream that reads from memory
 	import std.c.string;
 	const(void)[] arr;
 	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body{
@@ -55,7 +55,7 @@ unittest{
 }
 alias memRStream=MemRStream;
 
-struct FileRStream(bool seekable=true){
+struct FileRStream(bool seekable=true){//a rstream wrapper around a file
 	import std.stdio;
 	File file;
 	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body{
