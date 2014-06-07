@@ -262,7 +262,12 @@ unittest{//spesific unittest for TypeRStream
 	auto cls=new RStreamWrap!TestType(TestType());
 	ubyte a=cls.read!ubyte;
 }
-
+auto rstreamWrap(Par=Object,S)(S s){
+	return new RStreamWrap!(S,Par)(s);
+}
+unittest{
+	auto a=rstreamWrap(MemRStream());
+}
 template RStreamInterfaceOf(S){//return interface of all streams that S supports
 	template I(A){
 		enum I=A.IS!(S);

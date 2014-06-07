@@ -201,6 +201,13 @@ unittest{
 	}
 }
 
+auto wstreamWrap(Par=Object,S)(S s){
+	return new WStreamWrap!(S,Par)(s);
+}
+unittest{
+	auto a=wstreamWrap(MemWStream());
+}
+
 template WStreamInterfaceOf(S){//return interface of all streams that S supports
 	template I(A){
 		enum I=A.IS!(S);
