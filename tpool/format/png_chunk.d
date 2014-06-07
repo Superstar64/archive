@@ -7,6 +7,7 @@ import std.exception: enforce;
 
 struct ChunkRRange(S,bool checkCrc=true) if(isRStream!S){//carefull constructer pops first chunk imidately
 	struct Chunk{//type used for reading chunk
+		//plese be careful when coping if S is not saveable
 		char[4] name;
 		static if(checkCrc){
 			LimitRStream!(Crc32RStream!(S),true) stream;
@@ -15,6 +16,11 @@ struct ChunkRRange(S,bool checkCrc=true) if(isRStream!S){//carefull constructer 
 		}
 		@property auto length(){
 			return stream.seek;
+		}
+		static if(isMarkableRStream!S){
+			this(this){
+				stream=stream.save;
+			}
 		}
 	}
 	
@@ -69,7 +75,7 @@ auto chunkRRange(bool checkCrc=true,S)(S stream){
 	return ChunkRRange!(S,checkCrc)(stream);
 }
 version(chunk_test){
-	void main(string args[]){//todo use FileRStream later
+	void main(string args[]){
 		import std.stdio;import std.file;
 		if(args.length<2){
 			writeln("no arguments");
