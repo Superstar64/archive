@@ -240,7 +240,7 @@ unittest {
 	assert(stream.eof);
 }
 
-struct RangeRStream(S,BufType=ubyte) if(isCheckableRStream!S){//streams chunks of data as a range
+struct RangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as a range
 	S stream;
 	alias stream this;
 	BufType[] _buf;
@@ -742,7 +742,7 @@ unittest{
 	auto a=sjoinRStream([MemRStream()].map!(a=>a.save).cache);
 }
 
-struct PeekRStream(S){//peeks 1 byte ahead when eof is called to check for eof
+struct PeekRStream(S) if(isRStream!S){//peeks 1 byte ahead when eof is called to check for eof
 	S stream;
 	bool peek;
 	ubyte peekc;
