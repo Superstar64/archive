@@ -414,6 +414,9 @@ struct ZlibIRangeRStream(R, alias init=inflateInit) if(isInputRange!R){//generat
 		if(ret==Z_STREAM_END){
 			return buf.length-zstream.avail_out;
 		}
+		if(ret==Z_BUF_ERROR){
+			return 0;
+		}
 		enforce(ret==Z_OK);
 		if(zstream.avail_in==0){
 			if(refill()){

@@ -265,7 +265,7 @@ struct ZlibWStream(S,alias init=deflateInit) if(isWStream!S){//a wstream wrapper
 		zstream.avail_in=cast(typeof(zstream.avail_in)) data.length;
 	start:
 		auto ret=deflate(&zstream,flushlev);
-		enforce(ret==Z_OK||ret==Z_STREAM_END);
+		enforce(ret==Z_OK||ret==Z_STREAM_END||ret==Z_BUF_ERROR);
 		if(zstream.avail_out==0){
 			flush();
 			goto start;
