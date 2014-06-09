@@ -378,6 +378,7 @@ import etc.c.zlib;
 struct ZlibIRangeRStream(R, alias init=inflateInit) if(isInputRange!R){//generates a rstream that reads compressed data from a Inputrange of void[] 
 	R range;
 	z_stream zstream;
+	bool empt;
 	mixin readSkip;
 	mixin autoSave!(range,zstream);
 	this(R range_){
@@ -407,6 +408,9 @@ struct ZlibIRangeRStream(R, alias init=inflateInit) if(isInputRange!R){//generat
 		return false;
 	}
 	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body{
+		if(empt){
+			return 0;
+		}
 		zstream.next_out=cast(typeof(zstream.next_out))buf.ptr;
 		zstream.avail_out=cast(typeof(zstream.avail_out))buf.length;
 	start:
@@ -414,12 +418,14 @@ struct ZlibIRangeRStream(R, alias init=inflateInit) if(isInputRange!R){//generat
 		if(ret==Z_STREAM_END){
 			return buf.length-zstream.avail_out;
 		}
-		if(ret==Z_BUF_ERROR){
-			return 0;
-		}
 		enforce(ret==Z_OK);
 		if(zstream.avail_in==0){
+			if(zstream.avail_out==0){
+				empt=refill;
+				return buf.length;
+			}
 			if(refill()){
+				empt=true;
 				return buf.length-zstream.avail_out;
 			}
 			goto start;
