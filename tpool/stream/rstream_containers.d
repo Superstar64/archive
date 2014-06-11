@@ -408,7 +408,7 @@ struct ZlibIRangeRStream(R, alias init=inflateInit) if(isInputRange!R){//generat
 		return false;
 	}
 	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body{
-		if(empt){
+		if(empt||buf.length==0){
 			return 0;
 		}
 		zstream.next_out=cast(typeof(zstream.next_out))buf.ptr;
