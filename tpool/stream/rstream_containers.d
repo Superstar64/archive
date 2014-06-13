@@ -375,19 +375,23 @@ unittest{
 	auto a=rawRStream!ubyte(MemRStream());
 }
 import etc.c.zlib;
-struct ZlibIRangeRStream(R, alias init=inflateInit) if(isInputRange!R){//generates a rstream that reads compressed data from a Inputrange of void[] 
+struct ZlibIRangeRStream(R) if(isInputRange!R){//generates a rstream that reads compressed data from a Inputrange of void[] 
 	R range;
 	z_stream zstream;
 	bool empt;
 	mixin readSkip;
 	mixin autoSave!(range,zstream);
-	this(R range_){
-		range=range_;
-		assert(range.front.ptr==range.front.ptr);//sanity test
-		assert(range.front.length==range.front.length);
-		zstream.next_in=cast(typeof(zstream.next_in))range.front.ptr;
-		zstream.avail_in=cast(typeof(zstream.avail_in))range.front.length;
-		init(&zstream);
+	static typeof(this) ctor(alias init=inflateInit)(R range_){
+		typeof(this) t;
+		with(t){
+			range=range_;
+			assert(range.front.ptr==range.front.ptr);//sanity test
+			assert(range.front.length==range.front.length);
+			zstream.next_in=cast(typeof(zstream.next_in))range.front.ptr;
+			zstream.avail_in=cast(typeof(zstream.avail_in))range.front.length;
+			init(&zstream);
+		}
+		return t;
 	}
 	
 	this(R range_,z_stream z){//raw constructer plese ignore
@@ -439,18 +443,22 @@ struct ZlibIRangeRStream(R, alias init=inflateInit) if(isInputRange!R){//generat
 	}
 }
 auto zlibIRangeRStream(alias init=inflateInit,R)(R range){
-	return ZlibIRangeRStream!(R,init)(range);
+	return ZlibIRangeRStream!(R).ctor!init(range);
 }
 //a rstream that reads compressed data from a sub rstream
-struct ZlibRStream(S,alias init=inflateInit) if(isRStream!S){//buffers, reads more than needed
-	ZlibIRangeRStream!(RangeRStream!(S,void),init) stream; alias stream this;
-	this(S stream_,void[] buf){
-		auto brange=rangeRStream(stream_,buf);
-		stream=zlibIRangeRStream!(init)(brange);
+struct ZlibRStream(S) if(isRStream!S){//buffers, reads more than needed
+	ZlibIRangeRStream!(RangeRStream!(S,void)) stream; alias stream this;
+	static typeof(this) ctor(alias init=inflateInit)(S stream_,void[] buf){
+		typeof(this) t;
+		with(t){
+			auto brange=rangeRStream(stream_,buf);
+			stream=zlibIRangeRStream!(init)(brange);
+		}
+		return t;
 	}
 }
 auto zlibRStream(alias init=inflateInit,S)(S s,void[] buf){
-	return ZlibRStream!(S,init)(s,buf);
+	return ZlibRStream!(S).ctor!init(s,buf);
 }
 
 unittest{
@@ -462,7 +470,7 @@ unittest{import std.zlib;import std.stdio;
 	ubyte[2^^8] buf;	//input buf
 	auto input=compress("hello world");//data
 	ubyte[10] buf2;		//output buf
-	auto zs=ZlibRStream!(MemRStream)(MemRStream(input),buf);
+	auto zs=zlibRStream(MemRStream(input),buf);
 	
 	scope(exit) zs.close;
 	
@@ -487,7 +495,7 @@ unittest{import std.zlib;import std.stdio;
 	auto input=compress("hello world");//data
 	input~=cast(ubyte[])[4,1];//test for ZlibRStream!true
 	ubyte[10] buf2;		//output buf
-	auto zs=ZlibRStream!(MemRStream)(MemRStream(input),buf);
+	auto zs=zlibRStream(MemRStream(input),buf);
 	
 	scope(exit) zs.close;
 	
