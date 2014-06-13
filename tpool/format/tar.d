@@ -16,17 +16,6 @@ struct TarRRange(RStream,bool cpy=false) if(isRStream!RStream){
 		static if(isMarkableRStream!RStream){
 			this(this){
 				stream=stream.save;
-				static if(cpy){
-					name=name.dup;
-					linkName=linkName.dup;
-				}
-			}
-		}else{
-			static if(cpy){
-				this(this){//warning stream is invalid here
-					name=name.dup;
-					linkName=linkName.dup;
-				}
 			}
 		}
 	}
@@ -34,14 +23,16 @@ struct TarRRange(RStream,bool cpy=false) if(isRStream!RStream){
 	RStream stream;
 	TarElem front;
 	bool empty;
-	ubyte[512] buf;
+	ubyte[] buf;
 	uint remain;
 	mixin autoSave!(stream,front,empty,buf,remain);
-	this(RStream s){
+	this(RStream s,ubyte[] buffer){
 		stream=s;
+		assert(buffer.length==512,"buffer for tar must be size 512");
+		buf=buffer;
 		getNext();
 	}
-	this(RStream stream_,bool empty_,ubyte[512] buf_,uint remain_){
+	this(RStream stream_,bool empty_,ubyte[512] buf_,uint remain_){//raw constructor plese ignore
 		stream=stream_;
 		empty=empty_;
 		buf=buf_;
@@ -74,7 +65,7 @@ struct TarRRange(RStream,bool cpy=false) if(isRStream!RStream){
 		return;
 		
 		parse:
-		auto buf2=cast(char[]) buf;
+		auto buf2=cast(char[]) buf[];
 		{
 			front.name=buf2[0..100];
 			enforce(front.name[$-1]=='\0');
@@ -138,17 +129,18 @@ struct TarRRange(RStream,bool cpy=false) if(isRStream!RStream){
 		}
 	}
 }
-auto tarRRange(S)(S stream){
-	return TarRRange!S(stream);
+auto tarRRange(S)(S stream,ubyte[] buffer){
+	return TarRRange!S(stream,buffer);
 }
 
 version (tar_test){
 	void main(string args[]){
 		import std.stdio;import tpool.format.gzip;
 		File f=args[1];
-		ubyte[256] buf;
-		foreach(i;tarRRange(fileRStream(f))){
-			writeln(i);
+		ubyte[256] gzipbuf;
+		ubyte[512] buf;
+		foreach(i;tarRRange(gzipRStream(fileRStream(f),gzipbuf),buf)){
+			writeln(i.name);
 		}
 	}
 }
