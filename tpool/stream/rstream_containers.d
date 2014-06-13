@@ -253,7 +253,7 @@ struct RangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as
 	}
 	this(S s,BufType[] buf,bool eof){//raw constructer , only use if you know what you are doing
 		stream=s;
-		_buf=buf;
+		_buf=buf.dup;
 		_eof=eof;
 	}
 	@property{
