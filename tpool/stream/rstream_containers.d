@@ -240,21 +240,16 @@ unittest {
 	assert(stream.eof);
 }
 
-struct RangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as a range
+struct NonLazyRangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as a range
 	S stream;
 	alias stream this;
 	BufType[] _buf;
 	bool _eof;
-	
+	static assert(BufType.sizeof==1);
 	this(S s,BufType[] buf_){
 		stream=s;
 		_buf=buf_;
 		popFront();
-	}
-	this(S s,BufType[] buf,bool eof){//raw constructer , only use if you know what you are doing
-		stream=s;
-		_buf=buf.dup;
-		_eof=eof;
 	}
 	@property{
 		auto front(){
@@ -275,7 +270,46 @@ struct RangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as
 			return _eof;
 		}
 	}
+}
+
+struct LazyRangeRStream(S,BufType=ubyte) if(isMarkableRStream!S){
+	S stream;
+	alias stream this;
+	BufType[] _buf;
+	bool _eof;
 	mixin autoSave!(stream,_buf,_eof);
+	static assert(BufType.sizeof==1);
+	this(S s,BufType[] buf_){
+		stream=s;
+		_buf=buf_;
+	}
+	this(S s,BufType[] buf_,bool eof){
+		stream=s;
+		_buf=buf_;
+		_eof=eof;
+	}
+	@property{
+		auto front(){
+			auto str=stream.save;
+			auto len=str.readFill(_buf);
+			return _buf[0..len];
+		}
+		
+		void popFront(){
+			_eof=stream.skip(_buf.length)!=_buf.length;
+		}
+		
+		bool empty(){
+			return _eof;
+		}
+	}
+}
+template RangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks as a range, tries to be lazy (when saveable) if possible(to provide save features) 
+	static if(isMarkableRStream!S){
+		alias RangeRStream=LazyRangeRStream!(S,BufType);
+	}else{
+		alias RangeRStream=NonLazyRangeRStream!(S,BufType);
+	}
 }
 unittest{
 	ubyte[11] array=[0,0,1,0,1,5,0,1,2,0,1];
