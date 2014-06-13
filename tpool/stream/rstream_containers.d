@@ -222,11 +222,11 @@ unittest {
 	assert(len==1);
 	assert(stream.eof);
 }
-auto limitRStream(bool excepOnEof=true,S)(S s){
-	return LimitRStream!(S,excepOnEof)(s);
+auto limitRStream(bool excepOnEof=true,S)(S s,ulong limit){
+	return LimitRStream!(S,excepOnEof)(s,limit);
 }
 unittest{
-	auto a=limitRStream(MemRStream());
+	auto a=limitRStream(MemRStream(),0);
 }
 unittest {
 	ubyte[12] buf=[0,1,0,0, 5,1,   1,0,  0,2, 3,1];
