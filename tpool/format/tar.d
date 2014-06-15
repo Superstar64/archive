@@ -138,9 +138,11 @@ version (tar_test){
 		File f=args[1];
 		ubyte[256] gzipbuf;
 		ubyte[512] buf;
-		foreach(i;tarRRange(gzipRStream(fileRStream(f),gzipbuf),buf)){
+		auto range=tarRRange(gzipRStream(fileRStream(f),gzipbuf),buf);
+		foreach(i;range){
 			writeln(i.name);
 		}
+		range.stream.close;
 	}
 }
 version (tar_test2){
@@ -151,7 +153,16 @@ version (tar_test2){
 		auto stream=gzipRStream(memRStream(read(args[1])),gzipbuf);
 		pragma(msg,__traits(allMembers,typeof(stream)));
 		static assert(isMarkableRStream!((typeof(stream))));
-		auto elem=tarRRange(stream,tarbuf).tarRSave.array;
+		auto range=tarRRange(stream,tarbuf);
+		auto elem=range.tarRSave.array;
+		scope(exit){
+			range.stream.close;
+		}
+		scope(exit){
+			foreach(ref i;elem){
+				i.stream.close;
+			}
+		}
 		foreach(i;elem){
 			writeln(i.name);
 			writeln(i.stream.seek);

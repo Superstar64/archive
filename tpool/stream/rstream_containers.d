@@ -473,13 +473,8 @@ struct ZlibIRangeRStream(R) if(isInputRange!R){//generates a rstream that reads 
 			return buf.length;
 		}
 	}
-	@property void close(bool sub=true){
+	@property void close(){
 		inflateEnd(&zstream);
-		if(sub){
-			static if(isDisposeRStream!R){
-				zstream.close;
-			}
-		}
 	}
 }
 auto zlibIRangeRStream(alias init=inflateInit,R)(R range){
@@ -489,6 +484,14 @@ auto zlibIRangeRStream(alias init=inflateInit,R)(R range){
 struct ZlibRStream(S) if(isRStream!S){//buffers, reads more than needed
 	ZlibIRangeRStream!(RangeRStream!(S,void)) stream; alias stream this;
 	mixin autoSave!(stream);
+	void close(bool sub=true){
+		stream.close;
+		static if(isDisposeRStream!S){
+			if(sub){
+				stream.range.close;
+			}
+		}
+	}
 	static typeof(this) ctor(alias init=inflateInit)(S stream_,void[] buf){
 		typeof(this) t;
 		with(t){
