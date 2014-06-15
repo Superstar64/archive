@@ -144,6 +144,7 @@ class EofBeforeLength:Exception{
 struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, return eof when limit bytes are read
 															//if excepOnEof is true, it throws if eof is reached before limit
 	S stream;
+	alias stream this;
 	ulong limit;
 	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body {
 		if(buf.length>limit){
@@ -472,8 +473,13 @@ struct ZlibIRangeRStream(R) if(isInputRange!R){//generates a rstream that reads 
 			return buf.length;
 		}
 	}
-	@property void close(){
+	@property void close(bool sub=true){
 		inflateEnd(&zstream);
+		if(sub){
+			static if(isDisposeRStream!R){
+				zstream.close;
+			}
+		}
 	}
 }
 auto zlibIRangeRStream(alias init=inflateInit,R)(R range){
@@ -617,11 +623,7 @@ struct LRStream(S1,S2) if(isRStream!S1 && isRStream!S2){// a stream that reads f
 	S1 stream1;
 	S2 stream2;
 	bool remain=true;
-	static if(isCheckableRStream!S1&& isCheckableRStream!S2){
-		@property bool eof(){
-			return stream1.eof&&stream2.eof;
-		}
-	}
+	
 	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body{
 		if(remain){
 			auto read=stream1.readFill(buf); assert(read<=buf.length);
@@ -657,6 +659,21 @@ struct LRStream(S1,S2) if(isRStream!S1 && isRStream!S2){// a stream that reads f
 	static if(isSeekableRStream!S1 && isSeekableRStream!S2){
 		@property auto seek(){
 			return stream1.seek+stream2.seek;
+		}
+	}
+	static if(isCheckableRStream!S1&& isCheckableRStream!S2){
+		@property bool eof(){
+			return stream1.eof&&stream2.eof;
+		}
+	}
+	static if(isDisposeRStream!S1 || isDisposeRStream!S2){
+		@property void close(){
+			static if(isDisposeRStream!S1){
+				stream1.close;
+			}
+			static if(isDisposeRStream!S2){
+				stream2.close;
+			}
 		}
 	}
 }
@@ -756,6 +773,14 @@ struct JoinRStream(R,bool allowsave=false) if(isInputRange!R && isRStream!(Eleme
 		}
 		mixin seekEof;
 	}
+	static if(isDisposeRStream!(ElementType!(R))){
+		@property void close(){
+			while(!r.empty){
+				r.front.close;
+				r.popFront;
+			}
+		}
+	}
 	static  if(allowsave && isForwardRange!R){
 		mixin autoSave!(range,eof_);
 	}
@@ -796,6 +821,7 @@ unittest{
 
 struct PeekRStream(S) if(isRStream!S){//peeks 1 byte ahead when eof is called to check for eof
 	S stream;
+	alias stream this;
 	bool peek;
 	ubyte peekc;
 	bool _eof;

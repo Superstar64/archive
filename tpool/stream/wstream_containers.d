@@ -163,7 +163,7 @@ struct MultiPipeWStream(S...){//pipe single write stream to mulitple,
 			i.writeFill(buf);
 		}
 	}
-	static if(allSatisfy!(isTypeWStream,S)||allSatisfy!(isStringWStream,S)){
+	/+static if(allSatisfy!(isTypeWStream,S)||allSatisfy!(isStringWStream,S)){
 		void write(T)(T t){
 			foreach(i;streams){
 				i.write(t);
@@ -175,7 +175,7 @@ struct MultiPipeWStream(S...){//pipe single write stream to mulitple,
 				i.writeAr(t);
 			}
 		}
-	}
+	}+/
 	static if(allSatisfy!(isDisposeWStream,S)){
 		@property{
 			void flush(){
@@ -226,8 +226,8 @@ unittest{
 }
 struct CountWStream(S) if(isWStream!S){//a wstream that counts the amount of bytes written and forwards to a substream
 	S stream;
+	alias stream this;
 	ulong len;
-	
 	auto writeFill(const void[] buf){
 		len+=buf.length;
 		return stream.writeFill(buf);
