@@ -482,6 +482,7 @@ auto zlibIRangeRStream(alias init=inflateInit,R)(R range){
 //a rstream that reads compressed data from a sub rstream
 struct ZlibRStream(S) if(isRStream!S){//buffers, reads more than needed
 	ZlibIRangeRStream!(RangeRStream!(S,void)) stream; alias stream this;
+	mixin autoSave!(stream);
 	static typeof(this) ctor(alias init=inflateInit)(S stream_,void[] buf){
 		typeof(this) t;
 		with(t){
