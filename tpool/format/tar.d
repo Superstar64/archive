@@ -2,7 +2,7 @@ module tpool.format.tar;
 import tpool.stream.rstream;
 import std.exception;
 import std.c.string:strlen;
-//only copy/slice if cpy is true
+//do not call functions that copy and save this element with out calling tarRSave
 struct TarRRange(RStream) if(isRStream!RStream){
 	struct TarElem{
 		LimitRStream!RStream stream;
@@ -13,11 +13,6 @@ struct TarRRange(RStream) if(isRStream!RStream){
 		uint lastModTime;//in unix time
 		char link;
 		char[] linkName;
-		static if(isMarkableRStream!RStream){
-			this(this){
-				stream=stream.save;
-			}
-		}
 	}
 	
 	RStream stream;
@@ -32,8 +27,9 @@ struct TarRRange(RStream) if(isRStream!RStream){
 		buf=buffer;
 		getNext();
 	}
-	this(RStream stream_,bool empty_,ubyte[512] buf_,uint remain_){//raw constructor plese ignore
+	this(RStream stream_,TarElem _front,bool empty_,ubyte[] buf_,uint remain_){//raw constructor plese ignore
 		stream=stream_;
+		front=_front;
 		empty=empty_;
 		buf=buf_;
 		remain=remain_;
@@ -132,7 +128,10 @@ struct TarRRange(RStream) if(isRStream!RStream){
 auto tarRRange(S)(S stream,ubyte[] buffer){
 	return TarRRange!S(stream,buffer);
 }
-
+auto tarRSave(R)(R range){
+	import std.algorithm;
+	return range.map!(a=>{auto b=a;b.stream=b.stream.save;b.name=b.name.dup;b.linkName=b.linkName.dup; return b;  }());
+}
 version (tar_test){
 	void main(string args[]){
 		import std.stdio;import tpool.format.gzip;
@@ -141,6 +140,26 @@ version (tar_test){
 		ubyte[512] buf;
 		foreach(i;tarRRange(gzipRStream(fileRStream(f),gzipbuf),buf)){
 			writeln(i.name);
+		}
+	}
+}
+version (tar_test2){
+	void main(string args[]){
+		import std.stdio; import std.file;import tpool.format.gzip;import std.array;import std.algorithm;
+		ubyte[256] gzipbuf;
+		ubyte[512] tarbuf;
+		auto stream=gzipRStream(memRStream(read(args[1])),gzipbuf);
+		pragma(msg,__traits(allMembers,typeof(stream)));
+		static assert(isMarkableRStream!((typeof(stream))));
+		auto elem=tarRRange(stream,tarbuf).tarRSave.array;
+		foreach(i;elem){
+			writeln(i.name);
+			writeln(i.stream.seek);
+		}
+		writeln("sorted");
+		foreach(i;elem.sort!("a.name<b.name")){
+			writeln(i.name);
+			writeln(i.stream.seek);
 		}
 	}
 }

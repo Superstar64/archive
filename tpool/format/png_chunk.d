@@ -5,9 +5,10 @@ import tpool.stream.rstream;
 import std.range;
 import std.exception: enforce;
 
-struct ChunkRRange(S,bool checkCrc=true) if(isRStream!S){//carefull constructer pops first chunk imidately
+//do not call functions that copy and save this element with out call chuckRSave
+struct ChunkRRange(S,bool checkCrc=true) if(isRStream!S){
+	
 	struct Chunk{//type used for reading chunk
-		//plese be careful when coping if S is not saveable
 		char[4] name;
 		static if(checkCrc){
 			LimitRStream!(Crc32RStream!(S),true) stream;
@@ -16,11 +17,6 @@ struct ChunkRRange(S,bool checkCrc=true) if(isRStream!S){//carefull constructer 
 		}
 		@property auto length(){
 			return stream.seek;
-		}
-		static if(isMarkableRStream!S){
-			this(this){
-				stream=stream.save;
-			}
 		}
 	}
 	
@@ -74,6 +70,11 @@ struct ChunkRRange(S,bool checkCrc=true) if(isRStream!S){//carefull constructer 
 auto chunkRRange(bool checkCrc=true,S)(S stream){
 	return ChunkRRange!(S,checkCrc)(stream);
 }
+auto chuckRSave(R)(R range){
+	import std.algorithm;
+	return range.map!(a=>{auto b=a;b.stream=b.stream.save;return b;}());
+}
+
 version(chunk_test){
 	void main(string args[]){
 		import std.stdio;import std.file;
@@ -112,7 +113,7 @@ version(chunk_test2){//save and no crc test
 		enforce(sig==[0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]);
 		writeln(sig);
 		
-		auto chunks=chunkRRange(fstream);
+		auto chunks=chunkRRange(fstream).chuckRSave;
 		static assert(isForwardRange!(typeof(chunks)));
 		foreach(i;chunks.save){
 			writeln("name  :",i.name);
