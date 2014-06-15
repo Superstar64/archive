@@ -1,1 +1,1 @@
-find . -name "*.d" |xargs dmd -lib -ofbuild/tpool $@
+find . -name "*.d" |xargs dmd -lib -ofbuild/libtpool $@
