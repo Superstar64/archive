@@ -3,7 +3,7 @@ import tpool.stream.rstream;
 import std.exception;
 import std.c.string:strlen;
 //only copy/slice if cpy is true
-struct TarRRange(RStream,bool cpy=false) if(isRStream!RStream){
+struct TarRRange(RStream) if(isRStream!RStream){
 	struct TarElem{
 		LimitRStream!RStream stream;
 		char[] name;
