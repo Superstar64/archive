@@ -5,7 +5,7 @@ public import tpool.stream.common;
 
 public import tpool.stream.rstream_containers;
 public import tpool.stream.rstream_implementations;
-
+import tpool.range;
 alias RStreamTur=TypeTuple!(RStream_,CheckableRStream_,MarkableRStream_,SeekableRStream_,TypeRStream_,DisposeRStream_);
 
 //ReadStream
@@ -316,5 +316,7 @@ mixin template seekEof(){
 		return seek==0;
 	}
 }
+alias closeOnPop=onPop!(a=>a.close);
+
 //for copy pasting
 // out(_outLength) {assert(_outLength<=buf.length ); } body
