@@ -147,10 +147,22 @@ version (tar_test){
 }
 version (tar_test2){
 	void main(string args[]){
-		import std.stdio; import std.file;import tpool.format.gzip;import std.array;import std.algorithm;
+		import std.stdio; import std.file;import tpool.format.gzip;import std.array;import std.algorithm;import etc.c.zlib;
+		extern (C) static void* _myallocate(void*,size_t t,size_t num){
+			import std.stdio;import std.c.stdlib;
+			auto ret=malloc(t*num);
+			writeln("allocate(",t*num,")","=",ret);
+			return ret;
+		}
+		extern (C) static void _mydel(void*,void* ptr){
+			import std.stdio;import std.c.stdlib;
+			free(ptr);
+			writeln("del(",ptr,")");
+		}
+		
 		ubyte[256] gzipbuf;
 		ubyte[512] tarbuf;
-		auto stream=gzipRStream(memRStream(read(args[1])),gzipbuf);
+		auto stream=zlibRStream!(a=>{a.zalloc=&_myallocate;a.zfree=&_mydel;inflateInit2(a,15|16);}())(memRStream(read(args[1])),gzipbuf);
 		pragma(msg,__traits(allMembers,typeof(stream)));
 		static assert(isMarkableRStream!((typeof(stream))));
 		auto range=tarRRange(stream,tarbuf);
