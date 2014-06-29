@@ -45,3 +45,16 @@ unittest {
 	static assert(isWStream!VoidWStream);
 }
 alias voidWStream=VoidWStream;
+import std.socket;
+struct SocketWStream{
+	Socket s;
+	alias s this;
+	void writeFill(const void[] ar){
+		s.send(ar);
+	}
+	@property void flush(){}
+}
+unittest{
+	static assert(isWStream!SocketWStream);
+	static assert(isDisposeWStream!SocketWStream);
+}

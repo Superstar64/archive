@@ -113,3 +113,16 @@ auto fileRStream(bool seekable=true)(File f){
 unittest{
 	auto f=fileRStream(stdin);
 }
+import std.socket;
+struct SocketRStream{
+	Socket sock;
+	alias sock this;
+	mixin readSkip;
+	size_t readFill(void[] buffer){
+		return sock.receive(buffer);
+	}
+}
+unittest{
+	static assert(isRStream!SocketRStream);
+	static assert(isDisposeRStream!SocketRStream);
+}
