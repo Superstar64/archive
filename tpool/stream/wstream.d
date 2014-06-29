@@ -1,6 +1,7 @@
 module tpool.stream.wstream;
 
 import std.typetuple;
+import std.range;
 public import tpool.stream.common;
 
 public import tpool.stream.wstream_containers;
@@ -228,4 +229,29 @@ unittest{
 	BigEndianWStream!MemWStream a=void;
 	static assert(hasW!(typeof(a),ubyte));
 	static assert(!hasW!(typeof(a),bool));
+}
+
+auto put(WStream)(ref WStream w,void[] buf) if(isWStream!WStream){
+	return w.writeFill(buf);
+}
+unittest{
+	auto a=MemWStream();
+	a.put(cast(ubyte[])[1,2,3]);
+	assert(cast(ubyte[])(a.array)==[1,2,3]);
+}
+
+auto writeFill(Range)(ref Range r,void[] buf) if(isOutputRange!(Range,void[])){
+	 return std.range.put(r,buf);
+}
+unittest{
+	import std.array;
+	void func(void[] wri){
+		return;
+	}
+	auto a=&func;
+	auto data=cast(void[])(cast(ubyte[])[5,2]);
+	static assert(isOutputRange!(typeof(a),typeof(data)));
+	a(data);
+	writeFill(a,data);
+	a.writeFill(data);
 }

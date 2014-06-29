@@ -125,37 +125,6 @@ unittest{
 	auto a=littleEndianWStream(MemWStream());
 }
 
-struct WStreamRange(S) if(isWStream!S){//converts a wstream into a range
-	S stream;
-	void put(const void[] buf){stream.writeFill(buf);}
-	mixin autoSave!stream;
-}
-
-unittest{
-	static assert(isOutputRange!(WStreamRange!(MemWStream),const void[]));
-}
-auto wStreamRange(S)(S s){//todo unittest
-	return WStreamRange!S(s);
-}
-struct RangeWStream(R) if(isOutputRange!(R,const void[])){//converts a range to a wstream
-	import std.traits;
-	R range;
-	void writeFill(const void[] buf){
-		range.put(buf);
-	}
-}
-unittest{
-	struct Temp{
-		void put(const void[] b){
-			
-		}
-	}
-	static assert(isWStream!(RangeWStream!(Temp)));
-	
-}
-auto rangeWStream(S)(S s){//todo unittest
-	return RangeWStream!(S)(s);
-}
 struct MultiPipeWStream(S...){//pipe single write stream to mulitple,
 	S streams;
 	void writeFill(in void[] buf){
