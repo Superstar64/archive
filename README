@@ -4,4 +4,6 @@ Plese note this is still very unstable, i am constantly making breaking changes
 
 check out tpool/samples for examples
 
+dub link:http://code.dlang.org/packages/tornado-pool
+
 See the license at UNLICENSE.txt
