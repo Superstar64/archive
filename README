@@ -1,4 +1,7 @@
 Rangeish Stream libaray for D
 As of now there are only templates and interfaces and unittests for Stream and a Few implementations.
 Plese note this is still very unstable, i am constantly making breaking changes
+
+check out tpool/samples for examples
+
 See the license at UNLICENSE.txt
