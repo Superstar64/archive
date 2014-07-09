@@ -27,7 +27,9 @@ template isWStream(S){
 }
 
 unittest {
-	struct emp{};
+	struct emp{
+		uint dummy;
+	}
 	static assert(!isWStream!emp);
 	static assert(isWStream!WStream_);
 }

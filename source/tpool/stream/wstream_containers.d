@@ -48,8 +48,9 @@ struct BigEndianWStream(S,size_t bufsize=1024) if(isWStream!S){//if bufsize == 0
 				}
 				return;
 			}
+		}else{
+			stream.writeFill(t);
 		}
-		stream.writeFill(t);
 	}
 }
 unittest{
@@ -108,7 +109,9 @@ struct LittleEndianWStream(S,size_t bufsize=1024) if(isWStream!S){
 				return;
 			}
 		}
-		stream.writeFill(t);
+		else{
+			stream.writeFill(t);
+		}
 	}
 }
 unittest{

@@ -1,0 +1,8 @@
+{
+	"name": "tornado-pool",
+	"description": "A template based stream libaray",
+	"license":"public domain",
+	"authors": ["superstar64"],
+	"dependencies": {
+	}
+}
