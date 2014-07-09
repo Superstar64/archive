@@ -2,7 +2,6 @@ module tpool.samples;
 import std.stdio;
 import tpool.stream.rstream;
 import tpool.stream.wstream;
-//compile with ./buildunit.sh -version=... on the root directory , and see the file at build/test(\.exe)?
 
 version(readtar){
 	import tpool.format.tar;
