@@ -57,7 +57,7 @@ struct BigEndianRStream(S,bool check=true) if(isRStream!S){//if check is true th
 
 unittest {
 	ubyte[12] buf=[0,0,1,0, 1,5,   0,1,  2,0, 1,3];
-	auto stream=BigEndianRStream!MemRStream(MemRStream(buf));
+	auto stream=bigEndianRStream(MemRStream(buf));
 	static assert(isTypeRStream!(typeof(stream)));
 	assert(stream.read!int==256);
 	assert(!stream.eof);
@@ -70,9 +70,7 @@ unittest {
 auto bigEndianRStream(bool check=true,S)(S s){
 	return BigEndianRStream!(S,check)(s);
 }
-unittest{
-	auto a=bigEndianRStream(MemRStream());
-}
+
 //a typed rstream wrapper around a sub rstream
 struct LittleEndianRStream(S,bool check=true) if(isRStream!S){//if check is true then it check if readFill a aligned amount of data
 	import std.exception;
@@ -117,7 +115,7 @@ struct LittleEndianRStream(S,bool check=true) if(isRStream!S){//if check is true
 
 unittest {
 	ubyte[12] buf=[0,1,0,0, 5,1,   1,0,  0,2, 3,1];
-	auto stream=LittleEndianRStream!MemRStream(MemRStream(buf));
+	auto stream=littleEndianRStream(MemRStream(buf));
 	static assert(isTypeRStream!(typeof(stream)));
 	assert(stream.read!int==256);
 	assert(!stream.eof);
@@ -131,9 +129,7 @@ unittest {
 auto littleEndianRStream(bool check=true,S)(S s){
 	return LittleEndianRStream!(S,check)(s);
 }
-unittest{
-	auto a=littleEndianRStream(MemRStream());
-}
+
 
 class EofBeforeLength:Exception{
 	this(ulong read){
@@ -209,9 +205,9 @@ struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, r
 	}
 	mixin autoSave!(stream,limit);
 }
-unittest {
+unittest {//readFill test
 	ubyte[12] buf=[0,1,0,0, 5,1,   1,0,  0,2, 3,1];
-	auto stream=LimitRStream!MemRStream(MemRStream(buf),4);
+	auto stream=limitRStream(MemRStream(buf),4);
 	static assert(isRStream!(typeof(stream)));
 	static assert(isSeekableRStream!(typeof(stream)));
 	static assert(isMarkableRStream!(typeof(stream)));
@@ -223,13 +219,7 @@ unittest {
 	assert(len==1);
 	assert(stream.eof);
 }
-auto limitRStream(bool excepOnEof=true,S)(S s,ulong limit){
-	return LimitRStream!(S,excepOnEof)(s,limit);
-}
-unittest{
-	auto a=limitRStream(MemRStream(),0);
-}
-unittest {
+unittest { //skip test
 	ubyte[12] buf=[0,1,0,0, 5,1,   1,0,  0,2, 3,1];
 	auto stream=LimitRStream!MemRStream(MemRStream(buf),4);
 	static assert(isRStream!(typeof(stream)));
@@ -240,6 +230,11 @@ unittest {
 	assert(stream.skip(5)==1);
 	assert(stream.eof);
 }
+auto limitRStream(bool excepOnEof=true,S)(S s,ulong limit){
+	return LimitRStream!(S,excepOnEof)(s,limit);
+}
+
+
 
 struct NonLazyRangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as a range
 	S stream;
@@ -315,7 +310,7 @@ template RangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks as a ran
 unittest{
 	ubyte[11] array=[0,0,1,0,1,5,0,1,2,0,1];
 	ubyte[4] buf=void;
-	auto chunker=RangeRStream!(MemRStream,ubyte)(MemRStream(array),buf);
+	auto chunker=rangeRStream(MemRStream(array),buf);
 	static assert(isInputRange!(typeof(chunker)));
 	assert(!chunker.empty);
 	assert(chunker.front==[0,0,1,0]);
@@ -353,7 +348,7 @@ struct AllRStream(S) if(isRStream!S) {//a stream that throws a exception when a 
 
 unittest{
 	ubyte[7] buf;
-	auto str= BigEndianRStream!(AllRStream!MemRStream)(AllRStream!MemRStream(MemRStream(buf)));
+	auto str= bigEndianRStream(allRStream(MemRStream(buf)));
 	str.read!uint;
 	bool a=false;
 	try{
@@ -366,9 +361,6 @@ unittest{
 
 auto allRStream(S)(S s){
 	return AllRStream!S(s);
-}
-unittest{
-	auto a=allRStream(MemRStream());
 }
 
 struct RawRStream(S,T,bool check=true) if(isRStream!S){//reads exactly from memory
@@ -396,7 +388,7 @@ struct RawRStream(S,T,bool check=true) if(isRStream!S){//reads exactly from memo
 }
 unittest {
 	char[] a=['a','b','c'];
-	auto s=RawRStream!(MemRStream,char)(MemRStream(a));
+	auto s=rawRStream!char(MemRStream(a));
 	assert(s.read!char=='a');
 	char[2] b2;
 	s.readAr(b2);
@@ -405,9 +397,6 @@ unittest {
 }
 auto rawRStream(Type,bool check=true,S)(S stream){
 	return RawRStream!(S,Type,check)(stream);
-}
-unittest{
-	auto a=rawRStream!ubyte(MemRStream());
 }
 import etc.c.zlib;
 struct ZlibIRangeRStream(R) if(isInputRange!R){//generates a rstream that reads compressed data from a Inputrange of void[] 
@@ -576,7 +565,7 @@ struct Crc32RStream(S) if(isRStream!S){//generates crc32 around data read
 unittest{
 	import std.zlib;
 	enum ubyte[] source=[3,4,5,9,0];
-	auto str=Crc32RStream!MemRStream(MemRStream(source));
+	auto str=crc32RStream(MemRStream(source));
 	static assert(isRStream!(typeof(str)));
 	auto res=crc32(0,source);
 	str.skip(1000);
@@ -586,9 +575,7 @@ unittest{
 auto crc32RStream(S)(S s){
 	return Crc32RStream!(S)(s);
 }
-unittest{
-	auto a=crc32RStream(MemRStream());
-}
+
 
 struct Adler32RStream(S) if(isRStream!S){//generates crc32 around data read
 	import etc.c.zlib;
@@ -606,7 +593,7 @@ struct Adler32RStream(S) if(isRStream!S){//generates crc32 around data read
 unittest{
 	import std.zlib;
 	enum ubyte[] source=[3,4,5,9,0];
-	auto str=Adler32RStream!MemRStream(MemRStream(source));
+	auto str=adler32RStream(MemRStream(source));
 	static assert(isRStream!(typeof(str)));
 	auto res=adler32(0,source);
 	str.skip(1000);
@@ -615,9 +602,6 @@ unittest{
 
 auto adler32RStream(S)(S s){
 	return Adler32RStream!(S)(s);
-}
-unittest{
-	auto a=adler32RStream(MemRStream());
 }
 
 //Left Right stream
@@ -682,7 +666,7 @@ struct LRStream(S1,S2) if(isRStream!S1 && isRStream!S2){// a stream that reads f
 }
 unittest{
 	ubyte i[]=[1,2,3];
-	auto str=LRStream!(MemRStream,MemRStream)(MemRStream(i),MemRStream(i));static assert(isMarkableRStream!(typeof(str)));
+	auto str=lrStream(MemRStream(i),MemRStream(i));static assert(isMarkableRStream!(typeof(str)));
 	ubyte o[6];
 	assert(str.readFill(o[0..1])==1);
 	assert(o[0]==1);
@@ -706,7 +690,7 @@ unittest{
 
 unittest{
 	ubyte i[]=[1,2,3];
-	auto str=LRStream!(MemRStream,MemRStream)(MemRStream(i),MemRStream(i));static assert(isMarkableRStream!(typeof(str)));
+	auto str=lrStream(MemRStream(i),MemRStream(i));static assert(isMarkableRStream!(typeof(str)));
 	ubyte o[6];
 	assert(str.skip(1)==1);
 	
@@ -726,9 +710,7 @@ unittest{
 auto lrStream(S1,S2)(S1 s1,S2 s2){
 	return LRStream!(S1,S2)(s1,s2);
 }
-unittest{
-	auto a=lrStream(MemRStream(),MemRStream());
-}
+
 struct JoinRStream(R,bool allowsave=false) if(isInputRange!R && isRStream!(ElementType!R)){//joins a range of rstreams into a single rstream
 	R range;
 	bool eof_;
@@ -791,7 +773,7 @@ struct JoinRStream(R,bool allowsave=false) if(isInputRange!R && isRStream!(Eleme
 unittest{
 	ubyte[5] data=[1,2,3,4,5];
 	auto range=[MemRStream(data),MemRStream(data),MemRStream(data)];
-	auto stream=JoinRStream!(typeof(range))(range);
+	auto stream=joinRStream(range);
 	static assert(isRStream!(typeof(stream)));
 	
 	assert(stream.seek==15);
@@ -876,7 +858,7 @@ struct PeekRStream(S) if(isRStream!S){//peeks 1 byte ahead when eof is called to
 
 unittest{
 	ubyte[] data=[3,0,1,0,1,5,0,1,2,0,1,3];
-	auto stream=PeekRStream!(MemRStream)(MemRStream(data));
+	auto stream=peekRStream(MemRStream(data));
 	pragma(msg,"Ignore the previous warning, this is a unittest");
 	static assert(isCheckableRStream!((typeof(stream))));
 	static assert(isMarkableRStream!((typeof(stream))));
@@ -890,9 +872,4 @@ unittest{
 }
 auto peekRStream(S)(S s){
 	return PeekRStream!(S)(s);
-}
-unittest{
-	
-	import std.stdio;
-	auto a=peekRStream(fileRStream!false(stdout));
 }

@@ -54,7 +54,7 @@ struct BigEndianWStream(S,size_t bufsize=1024) if(isWStream!S){//if bufsize == 0
 	}
 }
 unittest{
-	auto s=BigEndianWStream!MemWStream(MemWStream());
+	auto s=bigEndianWStream(memWStream());
 	//static assert(isTypeWStream!(typeof(s)));
 	s.write(cast(ushort)10);
 	s.writeAr(cast(ushort[])[1,3]);
@@ -64,9 +64,7 @@ unittest{
 auto bigEndianWStream(S ,size_t bufsize=1024)(S s){
 	return BigEndianWStream!(S,bufsize)(s);
 }
-unittest{
-	auto a=bigEndianWStream(MemWStream());
-}
+
 //a typed wstream wrapper around a sub wstream
 struct LittleEndianWStream(S,size_t bufsize=1024) if(isWStream!S){
 	S stream;
@@ -115,7 +113,7 @@ struct LittleEndianWStream(S,size_t bufsize=1024) if(isWStream!S){
 	}
 }
 unittest{
-	auto s=LittleEndianWStream!MemWStream(MemWStream());
+	auto s=littleEndianWStream(MemWStream());
 	static assert(isTypeWStream!(typeof(s)));
 	s.write(cast(ushort)10);
 	s.writeAr(cast(ushort[])[1,3]);
@@ -124,14 +122,11 @@ unittest{
 auto littleEndianWStream(S ,size_t bufsize=1024)(S s){
 	return LittleEndianWStream!(S,bufsize)(s);
 }
-unittest{
-	auto a=littleEndianWStream(MemWStream());
-}
 
 struct MultiPipeWStream(S...){//pipe single write stream to mulitple,
 	S streams;
 	void writeFill(in void[] buf){
-		foreach(i;streams){
+		foreach(ref i;streams){
 			i.writeFill(buf);
 		}
 	}
@@ -165,12 +160,16 @@ struct MultiPipeWStream(S...){//pipe single write stream to mulitple,
 	}
 }
 unittest{
-	auto stream=MultiPipeWStream!(MemWStream)(MemWStream());
+	auto stream=multiPipeWStream(MemWStream(),MemWStream());
 	static assert(isWStream!(typeof(stream)));
-	void[] temp;
-	stream.writeFill(temp);
+	ubyte[] data=[1,2,3];
+	stream.writeFill(data);
+	stream.writeFill(data);
+	assert((cast(ubyte[])stream.streams[0].array)==[1,2,3,1,2,3]);
+	assert((cast(ubyte[])stream.streams[1].array)==[1,2,3,1,2,3]);
 	static assert(isWStream!(typeof(stream)));
 	static assert(!isTypeWStream!((typeof(stream))));
+	
 	
 	
 	struct Temp{
@@ -188,14 +187,12 @@ unittest{
 			}
 		}
 	}
-	static assert(isDisposeWStream!Temp);
+	static assert(isDisposeWStream!(MultiPipeWStream!Temp));
 }
 auto multiPipeWStream(S...)(S s){
 	return MultiPipeWStream!(S)(s);
 }
-unittest{
-	auto a=multiPipeWStream(MemWStream(),MemWStream());
-}
+
 struct CountWStream(S) if(isWStream!S){//a wstream that counts the amount of bytes written and forwards to a substream
 	S stream;
 	alias stream this;
@@ -207,15 +204,12 @@ struct CountWStream(S) if(isWStream!S){//a wstream that counts the amount of byt
 }
 unittest {
 	static assert(isWStream!(CountWStream!VoidWStream));
-	auto stream=LittleEndianWStream!(CountWStream!MemWStream)(CountWStream!MemWStream(MemWStream()));
+	auto stream=littleEndianWStream(countWStream(MemWStream()));
 	stream.write(cast(int)5);
 	assert(stream.stream.len==4);
 }
 auto countWStream(S)(S s){
 	return CountWStream!(S)(s);
-}
-unittest{
-	auto a=countWStream(MemWStream());
 }
 
 struct ZlibWStream(S,alias init=deflateInit) if(isWStream!S){//a wstream wrapper that uses zlib to compress and forward compress data to a sub stream
@@ -268,8 +262,7 @@ struct ZlibWStream(S,alias init=deflateInit) if(isWStream!S){//a wstream wrapper
 
 unittest{
 	ubyte[3] buffer;
-	auto subS= MemWStream();
-	auto a=ZlibWStream!(MemWStream)(subS,buffer);
+	auto a=zlibWStream(MemWStream(),buffer);
 	static assert(isWStream!(typeof(a)));
 	a.writeFill(cast(int[])[0,1,2,3,4,5]);
 	a.close();
@@ -293,17 +286,13 @@ struct RawWStream(S,T) if(isWStream!S){//writes exactly from memory
 	}
 }
 unittest {
-	void[] a;
-	auto s=RawWStream!(MemWStream,char)(MemWStream(a));
+	auto s=rawWStream!char(MemWStream());
 	s.write('a');
 	s.write('b');
 	assert(cast(char[])(s.array)=="ab");
 }
 auto rawWStream(T,S)(S s){
 	return RawWStream!(S,T)(s);
-}
-unittest {
-	auto a=rawWStream!ubyte(MemWStream());
 }
 //generates crc32 around data written and forwards to sub stream
 struct Crc32WStream(S) if(isWStream!S){
@@ -317,7 +306,7 @@ struct Crc32WStream(S) if(isWStream!S){
 }
 unittest{
 	import std.zlib;
-	auto stream=Crc32WStream!MemWStream(MemWStream());
+	auto stream=crc32WStream(MemWStream());
 	static assert(isWStream!((typeof(stream))));
 	stream.writeFill("Hello world");
 	stream.writeFill(cast(ubyte[])[0]);
@@ -326,9 +315,7 @@ unittest{
 auto crc32WStream(S)(S s){
 	return Crc32WStream!S(s);
 }
-unittest{
-	auto a=crc32WStream(MemWStream());
-}
+
 //generates adler32 around data written and forwards to sub stream
 struct Adler32WStream(S) if(isWStream!S){
 	import etc.c.zlib;
@@ -341,7 +328,7 @@ struct Adler32WStream(S) if(isWStream!S){
 }
 unittest{
 	import std.zlib;
-	auto stream=Adler32WStream!MemWStream(MemWStream());
+	auto stream=adler32WStream(MemWStream());
 	static assert(isWStream!((typeof(stream))));
 	stream.writeFill("Hello world");
 	stream.writeFill(cast(ubyte[])[0]);
@@ -349,7 +336,4 @@ unittest{
 }
 auto adler32WStream(S)(S s){
 	return Adler32WStream!S(s);
-}
-unittest{
-	auto a=adler32WStream(MemWStream());
 }
