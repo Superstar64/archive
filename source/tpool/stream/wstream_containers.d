@@ -306,7 +306,7 @@ unittest {
 	auto a=rawWStream!ubyte(MemWStream());
 }
 //generates crc32 around data written and forwards to sub stream
-struct Crc32WStream(S) if(isWStream!S){//todo: unittest
+struct Crc32WStream(S) if(isWStream!S){
 	import etc.c.zlib;
 	S Stream;alias stream=Stream;alias stream this;
 	uint crc;
@@ -316,9 +316,12 @@ struct Crc32WStream(S) if(isWStream!S){//todo: unittest
 	}
 }
 unittest{
+	import std.zlib;
 	auto stream=Crc32WStream!MemWStream(MemWStream());
 	static assert(isWStream!((typeof(stream))));
-	
+	stream.writeFill("Hello world");
+	stream.writeFill(cast(ubyte[])[0]);
+	assert(stream.crc==crc32(0,"Hello world\0"));
 }
 auto crc32WStream(S)(S s){
 	return Crc32WStream!S(s);
@@ -327,7 +330,7 @@ unittest{
 	auto a=crc32WStream(MemWStream());
 }
 //generates adler32 around data written and forwards to sub stream
-struct Adler32WStream(S) if(isWStream!S){//todo: unittest
+struct Adler32WStream(S) if(isWStream!S){
 	import etc.c.zlib;
 	S Stream;alias stream=Stream;alias stream this;
 	uint adler;
@@ -337,8 +340,12 @@ struct Adler32WStream(S) if(isWStream!S){//todo: unittest
 	}
 }
 unittest{
+	import std.zlib;
 	auto stream=Adler32WStream!MemWStream(MemWStream());
 	static assert(isWStream!((typeof(stream))));
+	stream.writeFill("Hello world");
+	stream.writeFill(cast(ubyte[])[0]);
+	assert(stream.adler==adler32(0,"Hello world\0"));
 }
 auto adler32WStream(S)(S s){
 	return Adler32WStream!S(s);

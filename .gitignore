@@ -2,3 +2,4 @@
 *.obj
 *.o
 build
+__test__library__
