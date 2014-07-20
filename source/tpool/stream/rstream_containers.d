@@ -785,7 +785,7 @@ unittest{
 	
 	assert(stream.readFill(buf[0..1])==1);
 	assert(buf[0..1]==[2]);
-	assert(stream.skip(uint.max)==8);
+	assert(stream.skipRest==8);
 	assert(stream.eof);
 }
 auto joinRStream(R)(R r){

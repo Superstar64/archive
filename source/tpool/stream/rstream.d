@@ -316,6 +316,16 @@ mixin template seekEof(){
 		return seek==0;
 	}
 }
+ulong skipRest(RStream)(ref RStream r) if(isRStream!RStream){
+	typeof(return) ret;
+	while(true){
+		auto res=r.skip(size_t.max);
+		ret+=res;
+		if(res!=size_t.max){
+			return ret;
+		}
+	}
+}
 alias closeOnPop=onPop!(a=>a.close);
 
 //for copy pasting

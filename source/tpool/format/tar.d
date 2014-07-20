@@ -37,7 +37,7 @@ struct TarRRange(RStream) if(isRStream!RStream){
 	
 	
 	void popFront(){
-		front.stream.skip(uint.max);
+		front.stream.skipRest;
 		stream=front.stream.stream;
 		stream.skip(remain);
 		getNext();

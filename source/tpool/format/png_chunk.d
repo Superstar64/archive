@@ -36,7 +36,7 @@ struct ChunkRRange(S,bool checkCrc=true) if(isRStream!S){
 	bool first=true;
 	bool empty;
 	@property void popFront(){
-		front.stream.skip(uint.max);//reach the end of the chunk to fill the crc
+		front.stream.skipRest;//reach the end of the chunk to fill the crc
 		static if(checkCrc){
 			stream=typeof(stream)(front.stream.stream.stream);//rewrap S into BigEndianRStream!S
 		}else{
