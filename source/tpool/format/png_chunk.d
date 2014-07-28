@@ -1,6 +1,7 @@
 module tpool.format.png_chunk;
 //Png chunks
 //https://en.wikipedia.org/wiki/Portable_Network_Graphics#.22Chunks.22_within_the_file
+import tpool.stream.wstream;
 import tpool.stream.rstream;
 import std.range;
 import std.exception: enforce;
@@ -123,4 +124,28 @@ version(chunk_test2){//save and no crc test
 			writeln("save test ",i.stream.seek);
 		}
 	}
+}
+
+struct ChunkW{
+	char[4] name;
+	void[] data;
+}
+
+struct ChunkWRange(WStream) if(isWStream!WStream){
+	WStream stream;
+	void put(ChunkW c){
+		auto s=bigEndianWStream(&stream);
+		s.write(cast(uint)c.data.length);
+		auto s2=bigEndianWStream(crc32WStream(&stream));
+		s2.writeFill(c.name);
+		s2.writeFill(c.data);
+		s.write(s2.crc);
+	}
+}
+auto chunkWRange(WStream)(WStream w){
+	return ChunkWRange!WStream(w);
+}
+unittest{
+	auto w=chunkWRange(memWStream());
+	w.put(ChunkW("test",cast(ubyte[])[0,1,2]));
 }
