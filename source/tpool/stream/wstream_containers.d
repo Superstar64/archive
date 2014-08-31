@@ -300,7 +300,8 @@ struct Crc32WStream(S) if(isWStream!S){
 	S Stream;alias stream=Stream;alias stream this;
 	uint crc;
 	void writeFill(const void[] buf){
-		crc=crc32(crc,cast(ubyte*)buf.ptr,buf.length);
+		import std.zlib;
+		crc=crc32(crc,buf);
 		Stream.writeFill(buf);
 	}
 }
@@ -322,7 +323,8 @@ struct Adler32WStream(S) if(isWStream!S){
 	S Stream;alias stream=Stream;alias stream this;
 	uint adler;
 	void writeFill(const void[] buf){
-		adler=adler32(adler,cast(ubyte*)buf.ptr,buf.length);
+		import std.zlib;
+		adler=adler32(adler,buf);
 		Stream.writeFill(buf);
 	}
 }

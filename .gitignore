@@ -3,3 +3,5 @@
 *.o
 build
 __test__library__
+libtornado-pool.a
+libtornado-pool.lib

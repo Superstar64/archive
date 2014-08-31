@@ -555,9 +555,10 @@ struct Crc32RStream(S) if(isRStream!S){//generates crc32 around data read
 	mixin readSkip;
 	mixin autoSave!(Stream,crc);
 	@property auto readFill(void[] arr) out(_outLength) {assert(_outLength<=arr.length ); } body{
+		import std.zlib;
 		auto len=Stream.readFill(arr);
 		assert(len<=arr.length);
-		crc=crc32(crc,cast(ubyte*)arr.ptr,len);
+		crc=crc32(crc,arr[0..len]);
 		return len;
 	}
 }
@@ -584,9 +585,10 @@ struct Adler32RStream(S) if(isRStream!S){//generates crc32 around data read
 	mixin readSkip;
 	mixin autoSave!(Stream,adler);
 	@property auto readFill(void[] arr) out(_outLength) {assert(_outLength<=arr.length ); } body{
+		import std.zlib;
 		auto len=Stream.readFill(arr);
 		assert(len<=arr.length);
-		adler=adler32(adler,cast(ubyte*)arr.ptr,len);
+		adler=adler32(adler,arr[0..len]);
 		return len;
 	}
 }
