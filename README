@@ -1,8 +1,6 @@
 Rangeish Stream libaray for D
-As of now there are only templates and interfaces and unittests for Stream and a Few implementations.
-Plese note this is still very unstable, i am constantly making breaking changes
+check out source/tpool/samples for examples
 
-check out tpool/samples for examples
 
 dub link:http://code.dlang.org/packages/tornado-pool
 
