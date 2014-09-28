@@ -36,32 +36,3 @@ mixin template autoSave(alias sub,Args...){//provides a default save, calling th
 		}
 	}
 }
-
-//todo make work
-/+
-mixin template ScopeWrap(alias var,string fun="close"){
-		static if(is(typeof((inout int=0)
-		{
-			typeof(var) v =void;
-			mixin("v."~fun~";");
-		}))){
-			//mixin("scope(exit) var."~fun~";");
-		}
-}
-
-unittest{
-	bool a;
-	struct Test{
-		@property void close(){
-			a=true;
-		}
-	}
-	
-	{
-		assert(a==false);
-		Test thing;
-		mixin ScopeWrap!thing;
-		assert(a==false);
-	}
-	assert(a==true);
-}+/

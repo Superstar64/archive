@@ -27,10 +27,6 @@ struct MemRStream{//a rstream that reads from memory
 		}
 		
 	}
-	@property bool eof(){
-		return arr.length==0;
-	}
-	
 	
 	@property typeof(this) save(){return typeof(this)(arr);}
 	
@@ -51,7 +47,6 @@ unittest{
 	assert(4==s.skip(4));
 	assert(1==s.readFill(temp));
 	assert(temp[0]==200);
-	assert(s.eof);
 }
 alias memRStream=MemRStream;
 
@@ -82,7 +77,6 @@ struct FileRStream(bool seekable=true){//a rstream wrapper around a file
 			auto seek(){
 				return file.size-file.tell;
 			}
-			mixin seekEof;
 		}else{
 			mixin readSkip;
 		}

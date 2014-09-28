@@ -6,7 +6,7 @@ public import tpool.stream.common;
 public import tpool.stream.rstream_containers;
 public import tpool.stream.rstream_implementations;
 import tpool.range;
-alias RStreamTur=TypeTuple!(RStream_,CheckableRStream_,MarkableRStream_,SeekableRStream_,TypeRStream_,DisposeRStream_);
+alias RStreamTur=TypeTuple!(RStream_,MarkableRStream_,SeekableRStream_,TypeRStream_,DisposeRStream_);
 
 //ReadStream
 interface RStream_{//assigning or copying may make this stream invalid
@@ -27,20 +27,6 @@ unittest{
 	static assert(isRStream!(RStream_));
 	static assert(!isRStream!(Emp));
 }
-
-interface CheckableRStream_:RStream_{
-	@property bool eof();//i want you to guess what this returns
-	template IS(S){enum IS=isCheckableRStream!S;}
-}
-template isCheckableRStream(S){
-	enum bool isCheckableRStream=isRStream!S && is(typeof((inout int=0){
-		S s=void;
-		bool end=s.eof;
-	}));
-}
-unittest{
-	static assert(isCheckableRStream!(MemRStream));
-}
 //a stream that can save the curren position
 interface MarkableRStream_:RStream_{
 	@property typeof(this) save();//saves current pos to the return value
@@ -59,12 +45,12 @@ unittest{
 }
 
 //a stream that know exactly how much data is left
-interface SeekableRStream_:CheckableRStream_{
+interface SeekableRStream_:RStream_{
 	@property ulong seek();//returns exactly how much is left in the stream
 	template IS(S){enum IS=isSeekableRStream!S;}
 }
 template isSeekableRStream(S){
-	enum bool isSeekableRStream=isCheckableRStream!(S) && 
+	enum bool isSeekableRStream=isRStream!(S) && 
 		is(typeof((inout int=0){
 			S s=void;
 			static assert(is(ulong==typeof(s.seek)));
@@ -186,9 +172,6 @@ class RStreamWrap(S,Par=Object):Par,RStreamInterfaceOf!(S) {//need to find a bet
 	override{
 		size_t readFill(void[] b){return raw.readFill(b);}
 		size_t skip(size_t b){return raw.skip(b);}
-		static if(isCheckableRStream!S){
-			@property bool eof(){return raw.eof;}
-		}
 		static if(isMarkableRStream!S){
 			@property typeof(this) save(){return new RStreamWrap(raw.save);}
 		}
@@ -233,7 +216,6 @@ unittest{
 		size_t readFill(void[]){return 0;}
 		size_t skip(size_t p){return false;}
 		@property ulong seek(){return 0;}
-		@property bool eof(){return true;}
 	}
 	auto cls=new RStreamWrap!TestSeek(TestSeek());
 	void[] temp;
@@ -257,7 +239,6 @@ unittest{//spesific unittest for TypeRStream
 		size_t readAr(T)(T[]){
 			return 0;
 		}
-		bool eof(){return true;}
 	}
 	auto cls=new RStreamWrap!TestType(TestType());
 	ubyte a=cls.read!ubyte;
@@ -311,11 +292,6 @@ mixin template readSkip(size_t bufsize=2048){
 	}
 }
 
-mixin template seekEof(){
-	@property bool eof(){
-		return seek==0;
-	}
-}
 ulong skipRest(RStream)(ref RStream r) if(isRStream!RStream){
 	typeof(return) ret;
 	while(true){

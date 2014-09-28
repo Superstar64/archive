@@ -60,11 +60,9 @@ unittest {
 	auto stream=bigEndianRStream(MemRStream(buf));
 	static assert(isTypeRStream!(typeof(stream)));
 	assert(stream.read!int==256);
-	assert(!stream.eof);
 	assert(stream.read!ushort==261);
 	ushort[3] buf2;
 	assert(stream.readAr(buf2)==3);
-	assert(stream.eof);
 	assert(buf2==[1,512,259]);
 }
 auto bigEndianRStream(bool check=true,S)(S s){
@@ -118,11 +116,9 @@ unittest {
 	auto stream=littleEndianRStream(MemRStream(buf));
 	static assert(isTypeRStream!(typeof(stream)));
 	assert(stream.read!int==256);
-	assert(!stream.eof);
 	assert(stream.read!ushort==261);
 	ushort[3] buf2;
 	assert(stream.readAr(buf2)==3);
-	assert(stream.eof);
 	assert(buf2==[1,512,259]);
 }
 
@@ -190,17 +186,11 @@ struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, r
 			auto seek(){
 				return limit;
 			}
-			mixin seekEof;
 		}else static if(isSeekableRStream!(S)){
 			auto seek(){
 				import std.math;
 				return min(limit,stream.seek);
-			}
-			mixin seekEof;
-		}else static if(isCheckableRStream!S){
-			auto eof(){
-				return limit==0 ||stream.eof;
-			}
+			};
 		}
 	}
 	mixin autoSave!(stream,limit);
@@ -217,7 +207,6 @@ unittest {//readFill test
 	assert(len==3);
 	len=stream.readFill(temp);
 	assert(len==1);
-	assert(stream.eof);
 }
 unittest { //skip test
 	ubyte[12] buf=[0,1,0,0, 5,1,   1,0,  0,2, 3,1];
@@ -228,7 +217,6 @@ unittest { //skip test
 	assert(stream.seek==4);
 	assert(stream.skip(3)==3);
 	assert(stream.skip(5)==1);
-	assert(stream.eof);
 }
 auto limitRStream(bool excepOnEof=true,S)(S s,ulong limit){
 	return LimitRStream!(S,excepOnEof)(s,limit);
@@ -393,7 +381,6 @@ unittest {
 	char[2] b2;
 	s.readAr(b2);
 	assert(b2=="bc");
-	assert(s.eof);
 }
 auto rawRStream(Type,bool check=true,S)(S stream){
 	return RawRStream!(S,Type,check)(stream);
@@ -650,11 +637,6 @@ struct LRStream(S1,S2) if(isRStream!S1 && isRStream!S2){// a stream that reads f
 			return stream1.seek+stream2.seek;
 		}
 	}
-	static if(isCheckableRStream!S1&& isCheckableRStream!S2){
-		@property bool eof(){
-			return stream1.eof&&stream2.eof;
-		}
-	}
 	static if(isDisposeRStream!S1 || isDisposeRStream!S2){
 		@property void close(){
 			static if(isDisposeRStream!S1){
@@ -672,8 +654,6 @@ unittest{
 	ubyte o[6];
 	assert(str.readFill(o[0..1])==1);
 	assert(o[0]==1);
-	
-	assert(!str.eof);
 	auto str2=str.save;
 	assert(str2.readFill(o[0..4])==4);
 	assert(o[0..4]==[2,3,1,2]);
@@ -681,11 +661,7 @@ unittest{
 	assert(str.readFill(o[0..4])==4);
 	assert(o[0..4]==[2,3,1,2]);
 	
-	assert(!str.eof);
-	
 	assert(str.readFill(o[0..1])==1);
-	
-	assert(str.eof);
 	
 	assert(o[0]==3);
 }
@@ -696,18 +672,12 @@ unittest{
 	ubyte o[6];
 	assert(str.skip(1)==1);
 	
-	assert(!str.eof);
-	
 	auto str2=str.save;
 	assert(str2.skip(4)==4);
 	
 	assert(str.skip(4)==4);
 	
-	assert(!str.eof);
-	
 	assert(str.skip(1)==1);
-	
-	assert(str.eof);
 }
 auto lrStream(S1,S2)(S1 s1,S2 s2){
 	return LRStream!(S1,S2)(s1,s2);
@@ -758,7 +728,6 @@ struct JoinRStream(R,bool allowsave=false) if(isInputRange!R && isRStream!(Eleme
 			}
 			return sum;
 		}
-		mixin seekEof;
 	}
 	static if(isDisposeRStream!(ElementType!(R))){
 		@property void close(){
@@ -783,12 +752,10 @@ unittest{
 	ubyte[6] buf;
 	assert(stream.readFill(buf)==6);
 	assert(buf==[1,2,3,4,5,1]);
-	assert(!stream.eof);
 	
 	assert(stream.readFill(buf[0..1])==1);
 	assert(buf[0..1]==[2]);
 	assert(stream.skipRest==8);
-	assert(stream.eof);
 }
 auto joinRStream(R)(R r){
 	return JoinRStream!(R,false)(r);
@@ -804,74 +771,4 @@ auto sjoinRStream(R)(R r){//saveable join stream, MAKE SURE R.save CALLS R.front
 unittest{
 	import tpool.range;
 	auto a=sjoinRStream([MemRStream()].map!(a=>a.save).cache);
-}
-
-struct PeekRStream(S) if(isRStream!S){//peeks 1 byte ahead when eof is called to check for eof
-	S stream;
-	alias stream this;
-	bool peek;
-	ubyte peekc;
-	bool _eof;
-	static if(isSeekableRStream!S){
-		pragma(msg,"Warning creating PeekRStream out of SeekableRStream of type ",S);
-	}
-	mixin autoSave!(stream,peek,peekc,_eof);
-	@property bool eof(){
-		if(peek){
-			return _eof;
-		}
-		else{
-			peek=true;
-			ubyte[1] data;
-			auto len=stream.readFill(data);
-			if(len==0){
-				_eof=true;
-				return true;
-			}else{
-				peekc=data[0];
-				return false;
-			}
-		}
-	}
-	
-	auto readFill(void[] mem){
-		if(peek){
-			if(_eof||mem.length==0){
-				return 0;
-			}
-			(cast(ubyte[])(mem))[0]=peekc;
-			peek=false;
-			return 1+stream.readFill(mem[1..$]);
-		}
-		return stream.readFill(mem);
-	}
-	
-	auto skip(size_t size){
-		if(peek){
-			if(_eof||size==0){
-				return 0;
-			}
-			peek=false;
-			return 1+stream.skip(size-1);
-		}
-		return stream.skip(size);
-	}
-}
-
-unittest{
-	ubyte[] data=[3,0,1,0,1,5,0,1,2,0,1,3];
-	auto stream=peekRStream(MemRStream(data));
-	pragma(msg,"Ignore the previous warning, this is a unittest");
-	static assert(isCheckableRStream!((typeof(stream))));
-	static assert(isMarkableRStream!((typeof(stream))));
-	ubyte[10] buf;
-	assert(!stream.eof);
-	assert(stream.readFill(buf[0..2])==2);
-	assert(buf[0..2]==[3,0]);
-	assert(!stream.eof);
-	assert(stream.skip(10)==10);
-	assert(stream.eof);
-}
-auto peekRStream(S)(S s){
-	return PeekRStream!(S)(s);
 }
