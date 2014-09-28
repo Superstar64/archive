@@ -48,7 +48,9 @@ alias voidWStream=VoidWStream;
 import std.socket;
 struct SocketWStream{
 	Socket s;
-	alias s this;
+	@property auto close(){
+		return s.close;
+	}
 	void writeFill(const void[] ar){
 		s.send(ar);
 	}

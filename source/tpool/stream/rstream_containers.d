@@ -17,7 +17,8 @@ class EofBadFormat:Exception{
 struct BigEndianRStream(S,bool check=true) if(isRStream!S){//if check is true then it check if readFill a aligned amount of data
 	import std.exception;
 	S stream;
-	alias stream this;
+	mixin ralias!stream;
+	
 	@property T read(T)() if(isDataType!T) {
 		ubyte buf[T.sizeof];
 		auto sz=stream.readFill(buf);
@@ -73,7 +74,8 @@ auto bigEndianRStream(bool check=true,S)(S s){
 struct LittleEndianRStream(S,bool check=true) if(isRStream!S){//if check is true then it check if readFill a aligned amount of data
 	import std.exception;
 	S stream;
-	alias stream this;
+	mixin ralias!stream;
+	
 	@property T read(T)() if(isDataType!T) {
 		ubyte buf[T.sizeof];
 		auto sz=stream.readFill(buf);
@@ -136,7 +138,6 @@ class EofBeforeLength:Exception{
 struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, return eof when limit bytes are read
 															//if excepOnEof is true, it throws if eof is reached before limit
 	S stream;
-	alias stream this;
 	ulong limit;
 	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body {
 		if(buf.length>limit){
@@ -222,11 +223,8 @@ auto limitRStream(bool excepOnEof=true,S)(S s,ulong limit){
 	return LimitRStream!(S,excepOnEof)(s,limit);
 }
 
-
-
 struct NonLazyRangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of data as a range
 	S stream;
-	alias stream this;
 	BufType[] _buf;
 	bool _eof;
 	static assert(BufType.sizeof==1);
@@ -258,7 +256,6 @@ struct NonLazyRangeRStream(S,BufType=ubyte) if(isRStream!S){//streams chunks of 
 
 struct LazyRangeRStream(S,BufType=ubyte) if(isMarkableRStream!S){
 	S stream;
-	alias stream this;
 	BufType[] _buf;
 	bool _eof;
 	mixin autoSave!(stream,_buf,_eof);
@@ -319,19 +316,17 @@ unittest{
 }
 
 struct AllRStream(S) if(isRStream!S) {//a stream that throws a exception when a buffer is not fully filled
-	S s;//stream
-	alias stream=s;
-	alias s this;
+	S stream;
 	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body{
-		enforce(s.readFill(buf)==buf.length);
+		enforce(stream.readFill(buf)==buf.length);
 		return buf.length;
 	}
 	
 	size_t skip(size_t si) out(_outLength) {assert(_outLength<=si ); } body{
-		enforce(s.skip(si)==si);
+		enforce(stream.skip(si)==si);
 		return si;
 	}
-	mixin autoSave!s;
+	mixin autoSave!stream;
 }
 
 unittest{
@@ -353,7 +348,7 @@ auto allRStream(S)(S s){
 
 struct RawRStream(S,T,bool check=true) if(isRStream!S){//reads exactly from memory
 	S stream;
-	alias stream this;
+	mixin ralias!stream;
 	@property T read(T)(){
 		ubyte[T.sizeof] buf;
 		auto len=stream.readFill(buf);
@@ -537,13 +532,13 @@ unittest{import std.zlib;import std.stdio;
 
 struct Crc32RStream(S) if(isRStream!S){//generates crc32 around data read
 	import etc.c.zlib;
-	S stream;alias Stream=stream;alias stream this;
+	S stream;
 	uint crc;
 	mixin readSkip;
-	mixin autoSave!(Stream,crc);
+	mixin autoSave!(stream,crc);
 	@property auto readFill(void[] arr) out(_outLength) {assert(_outLength<=arr.length ); } body{
 		import std.zlib;
-		auto len=Stream.readFill(arr);
+		auto len=stream.readFill(arr);
 		assert(len<=arr.length);
 		crc=crc32(crc,arr[0..len]);
 		return len;
@@ -567,13 +562,13 @@ auto crc32RStream(S)(S s){
 
 struct Adler32RStream(S) if(isRStream!S){//generates crc32 around data read
 	import etc.c.zlib;
-	S stream;alias Stream=stream;alias stream this;
+	S stream;
 	uint adler;
 	mixin readSkip;
-	mixin autoSave!(Stream,adler);
+	mixin autoSave!(stream,adler);
 	@property auto readFill(void[] arr) out(_outLength) {assert(_outLength<=arr.length ); } body{
 		import std.zlib;
-		auto len=Stream.readFill(arr);
+		auto len=stream.readFill(arr);
 		assert(len<=arr.length);
 		adler=adler32(adler,arr[0..len]);
 		return len;

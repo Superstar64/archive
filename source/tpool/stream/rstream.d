@@ -304,5 +304,14 @@ ulong skipRest(RStream)(ref RStream r) if(isRStream!RStream){
 }
 alias closeOnPop=onPop!(a=>a.close);
 
+mixin template ralias(alias stream){
+	auto readFill(void[] arg){
+		return stream.readFill(arg);
+	}
+	auto skip(size_t arg){
+		return stream.skip(arg);
+	}
+}
+
 //for copy pasting
 // out(_outLength) {assert(_outLength<=buf.length ); } body

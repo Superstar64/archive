@@ -257,3 +257,9 @@ unittest{
 	writeFill(a,data);
 	a.writeFill(data);
 }
+
+mixin template walias(alias stream){
+	auto writeFill(in void[] arg){
+		return stream.writeFill(arg);
+	}
+}

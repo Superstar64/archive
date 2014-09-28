@@ -9,7 +9,7 @@ import std.algorithm;
 //bufsize is in data per type not bytes
 struct BigEndianWStream(S,size_t bufsize=1024) if(isWStream!S){//if bufsize == 0 then it calls alloca
 	S stream;
-	alias stream this;
+	mixin walias!stream;
 	
 	void write(T)(T t) if(isDataType!T){
 		version(LittleEndian){
@@ -68,7 +68,8 @@ auto bigEndianWStream(S ,size_t bufsize=1024)(S s){
 //a typed wstream wrapper around a sub wstream
 struct LittleEndianWStream(S,size_t bufsize=1024) if(isWStream!S){
 	S stream;
-	alias stream this;
+	mixin walias!stream;
+	
 	void write(T)(T t) if(isDataType!T){
 		version(BigEndian){
 			(cast(void*)(&t))[0..T.sizeof].reverse;
@@ -130,19 +131,6 @@ struct MultiPipeWStream(S...){//pipe single write stream to mulitple,
 			i.writeFill(buf);
 		}
 	}
-	/+static if(allSatisfy!(isTypeWStream,S)||allSatisfy!(isStringWStream,S)){
-		void write(T)(T t){
-			foreach(i;streams){
-				i.write(t);
-			}
-		}
-
-		void writeAr(T)(in T[] t){
-			foreach(i;streams){
-				i.writeAr(t);
-			}
-		}
-	}+/
 	static if(allSatisfy!(isDisposeWStream,S)){
 		@property{
 			void flush(){
@@ -195,7 +183,6 @@ auto multiPipeWStream(S...)(S s){
 
 struct CountWStream(S) if(isWStream!S){//a wstream that counts the amount of bytes written and forwards to a substream
 	S stream;
-	alias stream this;
 	ulong len;
 	auto writeFill(const void[] buf){
 		len+=buf.length;
@@ -215,9 +202,9 @@ auto countWStream(S)(S s){
 struct ZlibWStream(S,alias init=deflateInit) if(isWStream!S){//a wstream wrapper that uses zlib to compress and forward compress data to a sub stream
 	import etc.c.zlib;import std.exception;
 	S stream;
-	z_stream_s zstream;alias z_stream_s=z_stream;
+	z_stream zstream;
 	void[] buf;
-	this(S stream_,void[] buf_,int compressLev=-1,z_stream_s zstream_=z_stream_s.init){
+	this(S stream_,void[] buf_,int compressLev=-1,z_stream zstream_=z_stream.init){
 		stream=stream_;
 		buf=buf_;
 		zstream=zstream_;
@@ -276,7 +263,7 @@ auto zlibWStream(alias init=deflateInit,S)(S s,void[] buf,int compress=-1,z_stre
 
 struct RawWStream(S,T) if(isWStream!S){//writes exactly from memory
 	S stream;
-	alias stream this;
+	mixin walias!stream;
 	void write(T t){
 		stream.writeFill(cast(void[])((&t)[0..1]));
 	}
@@ -289,7 +276,7 @@ unittest {
 	auto s=rawWStream!char(MemWStream());
 	s.write('a');
 	s.write('b');
-	assert(cast(char[])(s.array)=="ab");
+	assert(cast(char[])(s.stream.array)=="ab");
 }
 auto rawWStream(T,S)(S s){
 	return RawWStream!(S,T)(s);
@@ -297,12 +284,12 @@ auto rawWStream(T,S)(S s){
 //generates crc32 around data written and forwards to sub stream
 struct Crc32WStream(S) if(isWStream!S){
 	import etc.c.zlib;
-	S Stream;alias stream=Stream;alias stream this;
+	S stream;
 	uint crc;
 	void writeFill(const void[] buf){
 		import std.zlib;
 		crc=crc32(crc,buf);
-		Stream.writeFill(buf);
+		stream.writeFill(buf);
 	}
 }
 unittest{
@@ -320,12 +307,12 @@ auto crc32WStream(S)(S s){
 //generates adler32 around data written and forwards to sub stream
 struct Adler32WStream(S) if(isWStream!S){
 	import etc.c.zlib;
-	S Stream;alias stream=Stream;alias stream this;
+	S stream;
 	uint adler;
 	void writeFill(const void[] buf){
 		import std.zlib;
 		adler=adler32(adler,buf);
-		Stream.writeFill(buf);
+		stream.writeFill(buf);
 	}
 }
 unittest{
