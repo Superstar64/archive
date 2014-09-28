@@ -70,76 +70,28 @@ unittest {
 	assert(test);
 }
 
-struct CRange(alias gfront,alias gempty){//create range
-	@property 
-	{
+auto until(alias fun,alias emp)(){
+	alias type=typeof(fun());
+	struct InnerUntil{
+		private type f;
 		auto front(){
-			return gfront();
+			return f;
 		}
-		void popFront(){
+		@property auto popFront(){
+			f=fun();
 		}
-		bool empty(){
-			return gempty();
+		
+		@property auto empty(){
+			return emp(f);
 		}
 	}
-}
-auto cRange(alias gfront,alias gempty)(){
-	return CRange!(gfront,gempty)();
+	return InnerUntil(fun());
 }
 unittest{
 	uint cur;
-	auto range=cRange!(()=>{cur++;return cur;}(),()=>cur==5);
+	auto inc(){
+		return cur++;
+	}
+	auto range=until!(inc,a=>a==5);
 	static assert(isInputRange!(typeof(range)));
-	assert(range.front==1);
-	assert(!range.empty);
-	assert(range.front==2);
-	assert(!range.empty);
-	assert(range.front==3);
-	assert(!range.empty);
-	assert(range.front==4);
-	assert(!range.empty);
-	assert(range.front==5);
-	assert(range.empty);
-}
-
-struct OEmpty(Range,alias gempty) if(isInputRange!Range){//override empty
-	Range r;
-	mixin autoSave!(r);
-	@property bool empty(){
-		static if(is(typeof((inout int=0){
-			return gempty(r);
-		}))){
-			return gempty(r);
-		}else{
-			return gempty();
-		}
-	}
-	@property{
-		auto popFront(){
-			return r.popFront;
-		}
-		
-		auto front(){
-			return r.front;
-		}
-	}
-}
-template oEmpty(alias fun){
-	auto oEmpty(Range)(Range r){
-		return OEmpty!(Range,fun)(r);
-	}
-}
-unittest {
-	import std.stdio;
-	ubyte[] mem=[0,1,2,3];
-	auto range=oEmpty!(a=>a.front==2)(mem);
-	static assert(isForwardRange!(typeof(range)));
-	assert(range.array==[0,1]);
-}
-
-auto ccRange(alias gfront,alias gempty2)(){//create cache Range
-	return cRange!(gfront,()=>true).cache.oEmpty!(gempty2);
-}
-unittest{
-	auto range=ccRange!(()=>4,a=>a.front==4);
 }
