@@ -21,6 +21,7 @@ struct TarRRange(RStream) if(isRStream!RStream){
 	ubyte[] buf;
 	uint remain;
 	mixin autoSave!(stream,front,empty,buf,remain);
+	
 	this(RStream s,ubyte[] buffer){
 		stream=s;
 		assert(buffer.length==512,"buffer for tar must be size 512");

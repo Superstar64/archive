@@ -15,9 +15,9 @@ class EofBadFormat:Exception{
 }
 //a typed rstream wrapper around a sub rstream
 struct BigEndianRStream(S,bool check=true) if(isRStream!S){//if check is true then it check if readFill a aligned amount of data
-	import std.exception;
 	S stream;
 	mixin ralias!stream;
+	mixin autoSave!stream;
 	
 	@property T read(T)() if(isDataType!T) {
 		ubyte buf[T.sizeof];
@@ -53,7 +53,6 @@ struct BigEndianRStream(S,bool check=true) if(isRStream!S){//if check is true th
 		}
 		return sz/T.sizeof;
 	}
-	mixin autoSave!stream;
 }
 
 unittest {
@@ -72,9 +71,9 @@ auto bigEndianRStream(bool check=true,S)(S s){
 
 //a typed rstream wrapper around a sub rstream
 struct LittleEndianRStream(S,bool check=true) if(isRStream!S){//if check is true then it check if readFill a aligned amount of data
-	import std.exception;
 	S stream;
 	mixin ralias!stream;
+	mixin autoSave!stream;
 	
 	@property T read(T)() if(isDataType!T) {
 		ubyte buf[T.sizeof];
@@ -110,7 +109,7 @@ struct LittleEndianRStream(S,bool check=true) if(isRStream!S){//if check is true
 		}
 		return sz/T.sizeof;
 	}
-	mixin autoSave!stream;
+	
 }
 
 unittest {
@@ -135,10 +134,11 @@ class EofBeforeLength:Exception{
 		super("Eof reached before limit "~to!string(read)~" bytes expected");
 	}
 }
-struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, return eof when limit bytes are read
-															//if excepOnEof is true, it throws if eof is reached before limit
+struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, return eof when limit bytes are read//if excepOnEof is true, it throws if eof is reached before limit
 	S stream;
 	ulong limit;
+	mixin autoSave!(stream,limit);
+	
 	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body {
 		if(buf.length>limit){
 			auto len=stream.readFill(buf[0..cast(size_t)limit]);
@@ -194,7 +194,7 @@ struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, r
 			};
 		}
 	}
-	mixin autoSave!(stream,limit);
+	
 }
 unittest {//readFill test
 	ubyte[12] buf=[0,1,0,0, 5,1,   1,0,  0,2, 3,1];
@@ -259,6 +259,7 @@ struct LazyRangeRStream(S,BufType=ubyte) if(isMarkableRStream!S){
 	BufType[] _buf;
 	bool _eof;
 	mixin autoSave!(stream,_buf,_eof);
+	
 	static assert(BufType.sizeof==1);
 	this(S s,BufType[] buf_){
 		stream=s;
@@ -317,6 +318,8 @@ unittest{
 
 struct AllRStream(S) if(isRStream!S) {//a stream that throws a exception when a buffer is not fully filled
 	S stream;
+	mixin autoSave!stream;
+	
 	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body{
 		enforce(stream.readFill(buf)==buf.length);
 		return buf.length;
@@ -326,7 +329,6 @@ struct AllRStream(S) if(isRStream!S) {//a stream that throws a exception when a 
 		enforce(stream.skip(si)==si);
 		return si;
 	}
-	mixin autoSave!stream;
 }
 
 unittest{
@@ -349,6 +351,8 @@ auto allRStream(S)(S s){
 struct RawRStream(S,T,bool check=true) if(isRStream!S){//reads exactly from memory
 	S stream;
 	mixin ralias!stream;
+	mixin autoSave!stream;
+	
 	@property T read(T)(){
 		ubyte[T.sizeof] buf;
 		auto len=stream.readFill(buf);
@@ -367,7 +371,6 @@ struct RawRStream(S,T,bool check=true) if(isRStream!S){//reads exactly from memo
 		}
 		return a/T.sizeof;
 	}
-	mixin autoSave!stream;
 }
 unittest {
 	char[] a=['a','b','c'];
@@ -387,6 +390,7 @@ struct ZlibIRangeRStream(R) if(isInputRange!R){//generates a rstream that reads 
 	bool empt;
 	mixin readSkip;
 	mixin autoSave!(range,zstream);
+	
 	static typeof(this) ctor(alias init=inflateInit)(R range_){
 		typeof(this) t;
 		with(t){
@@ -453,8 +457,9 @@ auto zlibIRangeRStream(alias init=inflateInit,R)(R range){
 }
 //a rstream that reads compressed data from a sub rstream
 struct ZlibRStream(S) if(isRStream!S){//buffers, reads more than needed
-	ZlibIRangeRStream!(RangeRStream!(S,void)) stream; alias stream this;
+	ZlibIRangeRStream!(RangeRStream!(S,void)) stream;alias stream this;
 	mixin autoSave!(stream);
+	
 	void close(bool sub=true){
 		stream.close;
 		static if(isDisposeRStream!S){
@@ -489,7 +494,7 @@ unittest{import std.zlib;import std.stdio;
 	
 	scope(exit) zs.close;
 	
-	
+	static assert(isRStream!(typeof(zs)));
 	static assert(isDisposeRStream!(typeof(zs)));
 	static assert(isMarkableRStream!(typeof(zs)));
 	auto aaa=zs.save;
@@ -521,7 +526,6 @@ unittest{import std.zlib;import std.stdio;
 	
 	scope(exit) aaa.close;
 	
-	
 	assert(5==zs.readFill(buf2[0..5]));
 	assert(buf2[0..5]=="hello");
 	assert(5==aaa.readFill(buf2[0..5]));
@@ -536,6 +540,7 @@ struct Crc32RStream(S) if(isRStream!S){//generates crc32 around data read
 	uint crc;
 	mixin readSkip;
 	mixin autoSave!(stream,crc);
+	
 	@property auto readFill(void[] arr) out(_outLength) {assert(_outLength<=arr.length ); } body{
 		import std.zlib;
 		auto len=stream.readFill(arr);
@@ -566,6 +571,7 @@ struct Adler32RStream(S) if(isRStream!S){//generates crc32 around data read
 	uint adler;
 	mixin readSkip;
 	mixin autoSave!(stream,adler);
+	
 	@property auto readFill(void[] arr) out(_outLength) {assert(_outLength<=arr.length ); } body{
 		import std.zlib;
 		auto len=stream.readFill(arr);
@@ -681,6 +687,7 @@ auto lrStream(S1,S2)(S1 s1,S2 s2){
 struct JoinRStream(R,bool allowsave=false) if(isInputRange!R && isRStream!(ElementType!R)){//joins a range of rstreams into a single rstream
 	R range;
 	bool eof_;
+	
 	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body{
 		if(eof_){
 			return 0;

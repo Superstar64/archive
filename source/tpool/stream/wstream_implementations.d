@@ -24,10 +24,10 @@ alias fileWStream=FileWStream;
 struct MemWStream{//a stream that stores data into memory
 	import std.typecons;
 	void[] array;
+	
 	void writeFill(const void[] buf){
 		array~=buf;
 	}
-	
 }
 
 unittest{
@@ -48,6 +48,7 @@ alias voidWStream=VoidWStream;
 import std.socket;
 struct SocketWStream{
 	Socket s;
+	
 	@property auto close(){
 		return s.close;
 	}

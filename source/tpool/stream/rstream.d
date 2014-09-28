@@ -27,6 +27,7 @@ unittest{
 	static assert(isRStream!(RStream_));
 	static assert(!isRStream!(Emp));
 }
+
 //a stream that can save the curren position
 interface MarkableRStream_:RStream_{
 	@property typeof(this) save();//saves current pos to the return value
@@ -60,6 +61,7 @@ unittest {
 	static assert(isSeekableRStream!SeekableRStream_);
 	static assert(!isSeekableRStream!RStream_);
 }
+
 //a type stream, read spesific types
 interface TypeRStream_:RStream_{
 	@property{
@@ -145,6 +147,7 @@ unittest{
 	static assert(isTypeRStream!TypeRStream_);
 	static assert(!(isTypeRStream!RStream_));
 }
+
 //close able Rstream
 interface DisposeRStream_:RStream_{
 	@property void close();
@@ -163,6 +166,7 @@ unittest{
 	static assert(!isDisposeRStream!RStream_);
 	static assert(isDisposeRStream!DisposeRStream_);
 }
+
 //wrap S in a class, usefull if you prefer virtual pointers over code duplication
 class RStreamWrap(S,Par=Object):Par,RStreamInterfaceOf!(S) {//need to find a better way to do this
 	private S raw;alias raw this;
@@ -227,6 +231,9 @@ unittest{
 	}
 	testFun(cls);
 }
+auto rstreamWrap(Par=Object,S)(S s){
+	return new RStreamWrap!(S,Par)(s);
+}
 
 unittest{//spesific unittest for TypeRStream
 	struct TestType{
@@ -240,15 +247,12 @@ unittest{//spesific unittest for TypeRStream
 			return 0;
 		}
 	}
-	auto cls=new RStreamWrap!TestType(TestType());
+	auto cls=rstreamWrap(TestType());
 	ubyte a=cls.read!ubyte;
 }
-auto rstreamWrap(Par=Object,S)(S s){
-	return new RStreamWrap!(S,Par)(s);
-}
-unittest{
-	auto a=rstreamWrap(MemRStream());
-}
+
+
+
 template RStreamInterfaceOf(S){//return interface of all streams that S supports
 	template I(A){
 		enum I=A.IS!(S);

@@ -3,6 +3,7 @@ import tpool.stream.rstream;
 struct MemRStream{//a rstream that reads from memory
 	import std.c.string;
 	const(void)[] arr;
+	
 	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body{
 		if(buf.length>=arr.length){
 			memcpy(buf.ptr,arr.ptr,arr.length);
@@ -53,6 +54,7 @@ alias memRStream=MemRStream;
 struct FileRStream(bool seekable=true){//a rstream wrapper around a file
 	import std.stdio;
 	File file;
+	
 	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body{
 		if(buf.length==0){
 			return 0;
@@ -111,6 +113,7 @@ unittest{
 import std.socket;
 struct SocketRStream{
 	Socket sock;
+	
 	@property auto close(){
 		return sock.close;
 	}

@@ -126,11 +126,13 @@ auto littleEndianWStream(S ,size_t bufsize=1024)(S s){
 
 struct MultiPipeWStream(S...){//pipe single write stream to mulitple,
 	S streams;
+	
 	void writeFill(in void[] buf){
 		foreach(ref i;streams){
 			i.writeFill(buf);
 		}
 	}
+	
 	static if(allSatisfy!(isDisposeWStream,S)){
 		@property{
 			void flush(){
@@ -157,8 +159,6 @@ unittest{
 	assert((cast(ubyte[])stream.streams[1].array)==[1,2,3,1,2,3]);
 	static assert(isWStream!(typeof(stream)));
 	static assert(!isTypeWStream!((typeof(stream))));
-	
-	
 	
 	struct Temp{
 		auto writeFill(in void[] buf){
@@ -204,6 +204,7 @@ struct ZlibWStream(S,alias init=deflateInit) if(isWStream!S){//a wstream wrapper
 	S stream;
 	z_stream zstream;
 	void[] buf;
+
 	this(S stream_,void[] buf_,int compressLev=-1,z_stream zstream_=z_stream.init){
 		stream=stream_;
 		buf=buf_;
@@ -264,6 +265,7 @@ auto zlibWStream(alias init=deflateInit,S)(S s,void[] buf,int compress=-1,z_stre
 struct RawWStream(S,T) if(isWStream!S){//writes exactly from memory
 	S stream;
 	mixin walias!stream;
+	
 	void write(T t){
 		stream.writeFill(cast(void[])((&t)[0..1]));
 	}
@@ -286,6 +288,7 @@ struct Crc32WStream(S) if(isWStream!S){
 	import etc.c.zlib;
 	S stream;
 	uint crc;
+	
 	void writeFill(const void[] buf){
 		import std.zlib;
 		crc=crc32(crc,buf);
@@ -309,6 +312,7 @@ struct Adler32WStream(S) if(isWStream!S){
 	import etc.c.zlib;
 	S stream;
 	uint adler;
+	
 	void writeFill(const void[] buf){
 		import std.zlib;
 		adler=adler32(adler,buf);
