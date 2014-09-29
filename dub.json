@@ -4,5 +4,16 @@
 	"license":"public domain",
 	"authors": ["superstar64"],
 	"dependencies": {
-	}
+	},
+	"configurations":[
+		{
+			"name":"default",
+			"targetType":"library"
+		},
+		{
+			"name":"use_phobos_cache",
+			"targetType":"library",
+			"versions":["phobos_cache"]
+		}
+	]
 }

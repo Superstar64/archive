@@ -2,7 +2,7 @@ module tpool.range;
 import std.range;
 import tpool.stream.common:autoSave;
 version(phobos_cache){//std.range recently got a cache function, eventully this code will go away
-	
+	public import std.algorithm : cache;
 }else{
 	struct Cache(R,F) if(isInputRange!R){
 		this(R range_){
@@ -25,18 +25,18 @@ version(phobos_cache){//std.range recently got a cache function, eventully this 
 	auto cache(R)(R range){
 		return Cache!(R,ElementType!(R))(range);
 	}
-}
-unittest{
-	ubyte[] ar=[1,2,3];
-	auto range=cache(ar);
-	assert(range.front==1);
-	range.front=2;
-	assert(ar==[1,2,3]);
-	range.popFront();
-	assert(range.front==2);
-	
-	ar.front=2;
-	assert(ar==[2,2,3]);
+	unittest{
+		ubyte[] ar=[1,2,3];
+		auto range=cache(ar);
+		assert(range.front==1);
+		range.front=2;
+		assert(ar==[1,2,3]);
+		range.popFront();
+		assert(range.front==2);
+		
+		ar.front=2;
+		assert(ar==[2,2,3]);
+	}
 }
 struct OnPop(Range,alias fun) if(isInputRange!Range){
 	Range r;
