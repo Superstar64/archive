@@ -1,28 +1,31 @@
 module tpool.range;
 import std.range;
 import tpool.stream.common:autoSave;
-struct Cache(R,F) if(isInputRange!R){
-	this(R range_){
-		range=range_;
-		front=range.front;
-	}
-	R range;
-	F front;
-	@property{
-		void popFront(){
-			range.popFront();
+version(phobos_cache){//std.range recently got a cache function, eventully this code will go away
+	
+}else{
+	struct Cache(R,F) if(isInputRange!R){
+		this(R range_){
+			range=range_;
 			front=range.front;
 		}
-		auto empty(){
-			return range.empty;
+		R range;
+		F front;
+		@property{
+			void popFront(){
+				range.popFront();
+				front=range.front;
+			}
+			auto empty(){
+				return range.empty;
+			}
 		}
+		mixin autoSave!(range);
 	}
-	mixin autoSave!(range);
+	auto cache(R)(R range){
+		return Cache!(R,ElementType!(R))(range);
+	}
 }
-auto cache(R)(R range){
-	return Cache!(R,ElementType!(R))(range);
-}
-
 unittest{
 	ubyte[] ar=[1,2,3];
 	auto range=cache(ar);
