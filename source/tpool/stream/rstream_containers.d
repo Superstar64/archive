@@ -468,17 +468,11 @@ struct ZlibRStream(S) if(isRStream!S){//buffers, reads more than needed
 			}
 		}
 	}
-	static typeof(this) ctor(alias init=inflateInit)(S stream_,void[] buf){
-		typeof(this) t;
-		with(t){
-			auto brange=rangeRStream(stream_,buf);
-			stream=zlibIRangeRStream!(init)(brange);
-		}
-		return t;
-	}
 }
 auto zlibRStream(alias init=inflateInit,S)(S s,void[] buf){
-	return ZlibRStream!(S).ctor!init(s,buf);
+	auto str=ZlibRStream!(S)();
+	str.stream=zlibIRangeRStream!(init)(rangeRStream(s,buf));
+	return str;
 }
 
 unittest{
