@@ -42,19 +42,24 @@ version (readgz) {
 	}
 }
 
+
 version (readbytes){
 	void main(string args[]){
 		if(args.length<2){
 			writeln(args[0]~" file");
 		}
 		auto fs=fileRStream!false(File(args[1]));
-		auto strm=littleEndianRStream(peekRStream(fs));//peekRStream peeks 1 byte ahead to check for eof
+		auto strm=littleEndianRStream(fs);//peekRStream peeks 1 byte ahead to check for eof
 		scope(exit){
 			//as stated above this is optional
 			strm.close;
 		}
-		while(!strm.eof){
-			writeln(strm.read!ubyte);//read function provided by littleEndianRStream
+		try{//need a better way to do this
+			while(true){
+				writeln(strm.read!ubyte);//read function provided by littleEndianRStream
+			}
+		}catch(EofBadFormat e){
+			
 		}
 	}
 }

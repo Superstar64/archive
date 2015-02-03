@@ -263,3 +263,15 @@ mixin template walias(alias stream){
 		return stream.writeFill(arg);
 	}
 }
+
+mixin template wclose(alias stream){
+	static if(isDisposeWStream!(typeof(stream))){
+		auto flush(){
+			return stream.flush;
+		}
+		
+		auto close(){
+			return stream.close;
+		}
+	}
+}

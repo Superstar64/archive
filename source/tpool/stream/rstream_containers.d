@@ -18,6 +18,9 @@ struct BigEndianRStream(S,bool check=true) if(isRStream!S){//if check is true th
 	S stream;
 	mixin ralias!stream;
 	mixin autoSave!stream;
+	mixin rclose!stream;
+	mixin rseek!stream;
+	mixin reof!stream;
 	
 	@property T read(T)() if(isDataType!T) {
 		ubyte buf[T.sizeof];
@@ -74,6 +77,9 @@ struct LittleEndianRStream(S,bool check=true) if(isRStream!S){//if check is true
 	S stream;
 	mixin ralias!stream;
 	mixin autoSave!stream;
+	mixin rclose!stream;
+	mixin rseek!stream;
+	mixin reof!stream;
 	
 	@property T read(T)() if(isDataType!T) {
 		ubyte buf[T.sizeof];
@@ -138,6 +144,8 @@ struct LimitRStream(S,bool excepOnEof=true) if(isRStream!S){//limiting stream, r
 	S stream;
 	ulong limit;
 	mixin autoSave!(stream,limit);
+	mixin rclose!stream;
+	mixin reof!stream;
 	
 	size_t readFill(void[] buf) out(_outLength) {assert(_outLength<=buf.length ); } body {
 		if(buf.length>limit){
@@ -315,7 +323,7 @@ unittest{
 	ubyte[1] buf;
 	auto a=rangeRStream(MemRStream(),buf);
 }
-
+deprecated
 struct AllRStream(S) if(isRStream!S) {//a stream that throws a exception when a buffer is not fully filled
 	S stream;
 	mixin autoSave!stream;
@@ -330,20 +338,7 @@ struct AllRStream(S) if(isRStream!S) {//a stream that throws a exception when a 
 		return si;
 	}
 }
-
-unittest{
-	ubyte[7] buf;
-	auto str= bigEndianRStream(allRStream(MemRStream(buf)));
-	str.read!uint;
-	bool a=false;
-	try{
-		str.read!uint;
-	}catch(Exception e){
-		a=true;
-	}
-	assert(a);
-}
-
+deprecated
 auto allRStream(S)(S s){
 	return AllRStream!S(s);
 }
@@ -352,6 +347,9 @@ struct RawRStream(S,T,bool check=true) if(isRStream!S){//reads exactly from memo
 	S stream;
 	mixin ralias!stream;
 	mixin autoSave!stream;
+	mixin rclose!stream;
+	mixin rseek!stream;
+	mixin reof!stream;
 	
 	@property T read(T)(){
 		ubyte[T.sizeof] buf;
@@ -390,6 +388,10 @@ struct ZlibIRangeRStream(R) if(isInputRange!R){//generates a rstream that reads 
 	bool empt;
 	mixin readSkip;
 	mixin autoSave!(range,zstream);
+	
+	@property bool eof(){
+		return empt;
+	}
 	
 	static typeof(this) ctor(alias init=inflateInit)(R range_){
 		typeof(this) t;
@@ -459,12 +461,13 @@ auto zlibIRangeRStream(alias init=inflateInit,R)(R range){
 struct ZlibRStream(S) if(isRStream!S){//buffers, reads more than needed
 	ZlibIRangeRStream!(RangeRStream!(S,void)) stream;alias stream this;
 	mixin autoSave!(stream);
+	mixin reof!stream;
 	
 	void close(bool sub=true){
 		stream.close;
 		static if(isDisposeRStream!S){
 			if(sub){
-				stream.range.close;
+				stream.close;
 			}
 		}
 	}
@@ -534,6 +537,9 @@ struct Crc32RStream(S) if(isRStream!S){//generates crc32 around data read
 	uint crc;
 	mixin readSkip;
 	mixin autoSave!(stream,crc);
+	mixin rclose!stream;
+	mixin rseek!stream;
+	mixin reof!stream;
 	
 	@property auto readFill(void[] arr) out(_outLength) {assert(_outLength<=arr.length ); } body{
 		import std.zlib;
@@ -565,6 +571,9 @@ struct Adler32RStream(S) if(isRStream!S){//generates crc32 around data read
 	uint adler;
 	mixin readSkip;
 	mixin autoSave!(stream,adler);
+	mixin rclose!stream;
+	mixin rseek!stream;
+	mixin reof!stream;
 	
 	@property auto readFill(void[] arr) out(_outLength) {assert(_outLength<=arr.length ); } body{
 		import std.zlib;
@@ -642,6 +651,12 @@ struct LRStream(S1,S2) if(isRStream!S1 && isRStream!S2){// a stream that reads f
 			}
 		}
 	}
+	static if(isEofRStream!S1 && isEofRStream!S2){
+		@property bool eof(){
+			return stream1.eof && stream2.eof;
+		}
+	}
+	
 }
 unittest{
 	ubyte i[]=[1,2,3];
@@ -725,6 +740,19 @@ struct JoinRStream(R,bool allowsave=false) if(isInputRange!R && isRStream!(Eleme
 			return sum;
 		}
 	}
+	static if(isForwardRange!R && isSeekableRStream!(ElementType!R)){
+		@property bool eof(){
+			auto iter=range.save;
+			bool eof;
+			foreach(strem;iter){
+				if(strem.eof){
+					return true;
+				}
+			}
+			return false;
+		}
+	}
+	
 	static if(isDisposeRStream!(ElementType!(R))){
 		@property void close(){
 			while(!r.empty){

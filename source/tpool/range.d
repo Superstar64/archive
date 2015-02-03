@@ -1,7 +1,7 @@
 module tpool.range;
 import std.range;
 import tpool.stream.common:autoSave;
-version(phobos_cache){//std.range recently got a cache function, eventully this code will go away
+version(phobos_cache){//std.algorithm recently got a cache function, eventully this code will go away
 	public import std.algorithm : cache;
 }else{
 	struct Cache(R,F) if(isInputRange!R){

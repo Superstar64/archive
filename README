@@ -5,3 +5,5 @@ check out source/tpool/samples for examples
 dub link:http://code.dlang.org/packages/tornado-pool
 
 See the license at UNLICENSE.txt
+
+Don't blame me if the code doesn't work( or compile).

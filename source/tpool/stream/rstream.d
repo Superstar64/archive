@@ -6,7 +6,7 @@ public import tpool.stream.common;
 public import tpool.stream.rstream_containers;
 public import tpool.stream.rstream_implementations;
 import tpool.range;
-alias RStreamTur=TypeTuple!(RStream_,MarkableRStream_,SeekableRStream_,TypeRStream_,DisposeRStream_);
+alias RStreamTur=TypeTuple!(RStream_,MarkableRStream_,SeekableRStream_,TypeRStream_,DisposeRStream_,EofRStream_);
 
 //ReadStream
 interface RStream_{//assigning or copying may make this stream invalid
@@ -167,6 +167,27 @@ unittest{
 	static assert(isDisposeRStream!DisposeRStream_);
 }
 
+interface EofRStream_:RStream_{
+	@property bool eof();
+	template IS(S){enum IS=isEofRStream!S;}
+}
+template isEofRStream(S){
+	enum bool isEofRStream=isRStream!(S) &&
+		is(typeof((inout int=0){
+			S s=void;
+			bool ef=s.eof;
+		}));
+}
+unittest{
+	static assert(!isEofRStream!RStream_);
+	static assert(isEofRStream!EofRStream_);
+}
+
+
+bool eof(S)(ref S stream) if(isSeekableRStream!S){
+	return stream.seek==0;
+}
+
 //wrap S in a class, usefull if you prefer virtual pointers over code duplication
 class RStreamWrap(S,Par=Object):Par,RStreamInterfaceOf!(S) {//need to find a better way to do this
 	private S raw;alias raw this;
@@ -208,11 +229,13 @@ class RStreamWrap(S,Par=Object):Par,RStreamInterfaceOf!(S) {//need to find a bet
 			size_t readAr(float[] a){return raw.readAr(a);}
 			size_t readAr(double[] a){return raw.readAr(a);}
 		}
+		static if(isDisposeRStream!S){
+			@property void close(){raw.close;}
+		}
+		static if(isEofRStream!S){
+			@property bool eof(){return raw.eof();}
+		}
 	}
-	static if(isDisposeRStream!S){
-		@property void close(){raw.close;}
-	}
-	
 }
 
 unittest{
@@ -317,5 +340,28 @@ mixin template ralias(alias stream){
 	}
 }
 
+mixin template rclose(alias stream){
+	static if(isDisposeRStream!(typeof(stream))){
+		auto close(){
+			return stream.close;
+		}
+	}
+}
+
+mixin template rseek(alias stream){
+	static if(isSeekableRStream!(typeof(stream))){
+		auto seek(){
+			return stream.seek;
+		}
+	}
+}
+
+mixin template reof(alias stream){
+	static if(isEofRStream!(typeof(stream))){
+		@property auto eof(){
+			return stream.eof;
+		}
+	}
+}
 //for copy pasting
 // out(_outLength) {assert(_outLength<=buf.length ); } body

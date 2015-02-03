@@ -10,6 +10,7 @@ import std.algorithm;
 struct BigEndianWStream(S,size_t bufsize=1024) if(isWStream!S){//if bufsize == 0 then it calls alloca
 	S stream;
 	mixin walias!stream;
+	mixin wclose!stream;
 	
 	void write(T)(T t) if(isDataType!T){
 		version(LittleEndian){
@@ -69,6 +70,7 @@ auto bigEndianWStream(S ,size_t bufsize=1024)(S s){
 struct LittleEndianWStream(S,size_t bufsize=1024) if(isWStream!S){
 	S stream;
 	mixin walias!stream;
+	mixin wclose!stream;
 	
 	void write(T)(T t) if(isDataType!T){
 		version(BigEndian){
@@ -183,6 +185,8 @@ auto multiPipeWStream(S...)(S s){
 
 struct CountWStream(S) if(isWStream!S){//a wstream that counts the amount of bytes written and forwards to a substream
 	S stream;
+	mixin wclose!stream;
+	
 	ulong len;
 	auto writeFill(const void[] buf){
 		len+=buf.length;
@@ -265,6 +269,7 @@ auto zlibWStream(alias init=deflateInit,S)(S s,void[] buf,int compress=-1,z_stre
 struct RawWStream(S,T) if(isWStream!S){//writes exactly from memory
 	S stream;
 	mixin walias!stream;
+	mixin wclose!stream;
 	
 	void write(T t){
 		stream.writeFill(cast(void[])((&t)[0..1]));
@@ -287,6 +292,7 @@ auto rawWStream(T,S)(S s){
 struct Crc32WStream(S) if(isWStream!S){
 	import etc.c.zlib;
 	S stream;
+	mixin wclose!stream;
 	uint crc;
 	
 	void writeFill(const void[] buf){
@@ -311,6 +317,7 @@ auto crc32WStream(S)(S s){
 struct Adler32WStream(S) if(isWStream!S){
 	import etc.c.zlib;
 	S stream;
+	mixin wclose!stream;
 	uint adler;
 	
 	void writeFill(const void[] buf){

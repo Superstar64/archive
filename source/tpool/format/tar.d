@@ -21,6 +21,7 @@ struct TarRRange(RStream) if(isRStream!RStream){
 	ubyte[] buf;
 	uint remain;
 	mixin autoSave!(stream,front,empty,buf,remain);
+	mixin rclose!stream;
 	
 	this(RStream s,ubyte[] buffer){
 		stream=s;
@@ -133,6 +134,7 @@ auto tarRSave(R)(R range){
 	import std.algorithm;
 	return range.map!(a=>{auto b=a;b.stream=b.stream.save;b.name=b.name.dup;b.linkName=b.linkName.dup; return b;  }());
 }
+
 version (tar_test){
 	void main(string args[]){
 		import std.stdio;import tpool.format.gzip;
@@ -149,7 +151,7 @@ version (tar_test){
 version (tar_test2){
 	void main(string args[]){
 		import std.stdio; import std.file;import tpool.format.gzip;import std.array;import std.algorithm;import etc.c.zlib;
-		extern (C) static void* _myallocate(void*,size_t t,size_t num){
+		extern (C) static void* _myallocate(void*,uint t,uint num){
 			import std.stdio;import std.c.stdlib;
 			auto ret=malloc(t*num);
 			writeln("allocate(",t*num,")","=",ret);
