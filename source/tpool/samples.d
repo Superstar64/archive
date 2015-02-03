@@ -49,7 +49,7 @@ version (readbytes){
 			writeln(args[0]~" file");
 		}
 		auto fs=fileRStream!false(File(args[1]));
-		auto strm=littleEndianRStream(fs);//peekRStream peeks 1 byte ahead to check for eof
+		auto strm=littleEndianRStream(fs);
 		scope(exit){
 			//as stated above this is optional
 			strm.close;
