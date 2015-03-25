@@ -1,7 +1,7 @@
 module tpool.stream.wstream_containers;
 import tpool.stream.wstream;
 import tpool.stream.common;
-import std.c.stdlib;//i'm dangerous
+import std.c.string;//i'm dangerous
 import std.typetuple;
 import std.range;
 import std.algorithm;
@@ -14,7 +14,7 @@ struct BigEndianWStream(S,size_t bufsize=1024) if(isWStream!S){//if bufsize == 0
 	
 	void write(T)(T t) if(isDataType!T){
 		version(LittleEndian){
-			(cast(void*)(&t))[0..T.sizeof].reverse;
+			reverse(cast(ubyte[])((cast(void*)(&t))[0..T.sizeof]));
 		}
 		stream.writeFill((cast(void*)(&t))[0..T.sizeof]);
 	}

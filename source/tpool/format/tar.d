@@ -136,7 +136,7 @@ auto tarRSave(R)(R range){
 }
 
 version (tar_test){
-	void main(string args[]){
+	void main(string[] args){
 		import std.stdio;import tpool.format.gzip;
 		File f=args[1];
 		ubyte[256] gzipbuf;
@@ -149,7 +149,7 @@ version (tar_test){
 	}
 }
 version (tar_test2){
-	void main(string args[]){
+	void main(string[] args){
 		import std.stdio; import std.file;import tpool.format.gzip;import std.array;import std.algorithm;import etc.c.zlib;
 		extern (C) static void* _myallocate(void*,uint t,uint num){
 			import std.stdio;import std.c.stdlib;

@@ -23,7 +23,7 @@ struct BigEndianRStream(S,bool check=true) if(isRStream!S){//if check is true th
 	mixin reof!stream;
 	
 	@property T read(T)() if(isDataType!T) {
-		ubyte buf[T.sizeof];
+		ubyte[T.sizeof] buf;
 		auto sz=stream.readFill(buf);
 		static if(check){
 			if(sz!=T.sizeof){
@@ -82,7 +82,7 @@ struct LittleEndianRStream(S,bool check=true) if(isRStream!S){//if check is true
 	mixin reof!stream;
 	
 	@property T read(T)() if(isDataType!T) {
-		ubyte buf[T.sizeof];
+		ubyte[T.sizeof] buf;
 		auto sz=stream.readFill(buf);
 		static if(check){
 			if(sz!=T.sizeof){
@@ -659,9 +659,9 @@ struct LRStream(S1,S2) if(isRStream!S1 && isRStream!S2){// a stream that reads f
 	
 }
 unittest{
-	ubyte i[]=[1,2,3];
+	ubyte[] i=[1,2,3];
 	auto str=lrStream(MemRStream(i),MemRStream(i));static assert(isMarkableRStream!(typeof(str)));
-	ubyte o[6];
+	ubyte[6] o;
 	assert(str.readFill(o[0..1])==1);
 	assert(o[0]==1);
 	auto str2=str.save;
@@ -677,9 +677,9 @@ unittest{
 }
 
 unittest{
-	ubyte i[]=[1,2,3];
+	ubyte[] i=[1,2,3];
 	auto str=lrStream(MemRStream(i),MemRStream(i));static assert(isMarkableRStream!(typeof(str)));
-	ubyte o[6];
+	ubyte[6] o;
 	assert(str.skip(1)==1);
 	
 	auto str2=str.save;

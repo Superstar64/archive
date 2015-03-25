@@ -5,7 +5,7 @@ import tpool.stream.wstream;
 
 version(readtar){
 	import tpool.format.tar;
-	void main(string args[]){
+	void main(string[] args){
 		if(args.length<2){
 			writeln(args[0]~" file");
 		}
@@ -23,7 +23,7 @@ version(readtar){
 
 version (readgz) {
 	import tpool.format.gzip;
-	void main(string args[]){
+	void main(string[] args){
 		if(args.length<2){
 			writeln(args[0]~ " file");
 		}
@@ -44,7 +44,7 @@ version (readgz) {
 
 
 version (readbytes){
-	void main(string args[]){
+	void main(string[] args){
 		if(args.length<2){
 			writeln(args[0]~" file");
 		}

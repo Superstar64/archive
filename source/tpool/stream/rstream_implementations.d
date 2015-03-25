@@ -94,7 +94,7 @@ debug(rstream_file){
 	void main(){
 		import std.stdio;
 		auto fs=new RStreamWrap!(FileRStream!false)(FileRStream!false(stdin));
-		ubyte buf[16];
+		ubyte[16] buf;
 		while(true){
 			writeln(fs.readFill(buf));
 			writeln(buf);
