@@ -81,10 +81,10 @@ void main(string[] args) {
 		foreach (c, ref obj; env.objs) {
 			obj.x += obj.xvel;
 			obj.y += obj.yvel;
-			obj.x %= w;
-			obj.x += obj.x < 0 ? 640 : 0;
-			obj.y %= h;
-			obj.y += obj.y < 0 ? 480 : 0;
+			obj.x %= (w + 8);
+			obj.x += obj.x < 0 ? (w + 8) : 0;
+			obj.y %= (h + 8);
+			obj.y += obj.y < 0 ? (h + 8) : 0;
 		}
 		foreach (c, ref obj; env.objs) {
 			auto others = env.objs[0 .. c].chain(env.objs[c + 1 .. $]);
