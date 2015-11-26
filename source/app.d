@@ -58,7 +58,7 @@ void main(string[] args) {
 	bool help;
 	getopt(args, "w|width", &w, "h|height", &h, "help", &help);
 	if (help) {
-		writeln(args[0] ~ '\n', "-width=\n-height=");
+		writeln(args[0] ~ '\n', "--width=\n--height=");
 		return;
 	}
 	SDL_CreateWindowAndRenderer(w, h, 0, &window, &render);
