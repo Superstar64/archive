@@ -55,10 +55,11 @@ void main(string[] args) {
 	IMG_Init(IMG_INIT_PNG);
 	int w = 640;
 	int h = 480;
+	int d = 10;
 	bool help;
-	getopt(args, "w|width", &w, "h|height", &h, "help", &help);
+	getopt(args, "w|width", &w, "h|height", &h, "d|delay", &d, "help", &help);
 	if (help) {
-		writeln(args[0] ~ '\n', "--width=\n--height=");
+		writeln(args[0] ~ '\n', "--width=\n--height=\n--delay");
 		return;
 	}
 	SDL_CreateWindowAndRenderer(w, h, 0, &window, &render);
@@ -105,8 +106,8 @@ void main(string[] args) {
 		}
 		SDL_RenderPresent(render);
 		auto net = SDL_GetTicks() - time;
-		if (1 > net) {
-			SDL_Delay(1 - net);
+		if (d > net) {
+			SDL_Delay(d - net);
 		}
 	}
 }
