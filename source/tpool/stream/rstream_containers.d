@@ -5,6 +5,7 @@ import std.exception : enforce;
 import std.algorithm;
 import std.range;
 
+///
 class EofBadFormat : Exception {
 	this() {
 		this("Found eof when expecting Number");
@@ -14,7 +15,7 @@ class EofBadFormat : Exception {
 		super(s);
 	}
 }
-//a typed rstream wrapper around a sub rstream
+
 struct BigEndianRStream(S, bool check = true) if (isRStream!S) { //if check is true then it check if readFill a aligned amount of data
 	S stream;
 	mixin ralias!stream;
@@ -70,11 +71,11 @@ unittest {
 	assert(buf2 == [1, 512, 259]);
 }
 
+///a typed rstream wrapper around a sub rstream
 auto bigEndianRStream(bool check = true, S)(S s) {
 	return BigEndianRStream!(S, check)(s);
 }
 
-//a typed rstream wrapper around a sub rstream
 struct LittleEndianRStream(S, bool check = true) if (isRStream!S) { //if check is true then it check if readFill a aligned amount of data
 	S stream;
 	mixin ralias!stream;
@@ -131,6 +132,7 @@ unittest {
 	assert(buf2 == [1, 512, 259]);
 }
 
+///a typed rstream wrapper around a sub rstream
 auto littleEndianRStream(bool check = true, S)(S s) {
 	return LittleEndianRStream!(S, check)(s);
 }
@@ -143,7 +145,7 @@ class EofBeforeLength : Exception {
 	}
 }
 
-struct LimitRStream(S, bool excepOnEof = true) if (isRStream!S) { //limiting stream, return eof when limit bytes are read//if excepOnEof is true, it throws if eof is reached before limit
+struct LimitRStream(S, bool excepOnEof = true) if (isRStream!S) {
 	S stream;
 	ulong limit;
 	mixin autoSave!(stream, limit);
@@ -243,11 +245,12 @@ unittest { //skip test
 	assert(stream.skip(5) == 1);
 }
 
+///limiting stream, return eof when limit bytes are read//if excepOnEof is true, it throws if eof is reached before limit
 auto limitRStream(bool excepOnEof = true, S)(S s, ulong limit) {
 	return LimitRStream!(S, excepOnEof)(s, limit);
 }
 
-struct NonLazyRangeRStream(S, BufType = ubyte) if (isRStream!S) { //streams chunks of data as a range
+struct NonLazyRangeRStream(S, BufType = ubyte) if (isRStream!S) {
 	S stream;
 	BufType[] _buf;
 	bool _eof;
@@ -314,7 +317,7 @@ struct LazyRangeRStream(S, BufType = ubyte) if (isMarkableRStream!S) {
 	}
 }
 
-template RangeRStream(S, BufType = ubyte) if (isRStream!S) { //streams chunks as a range, tries to be lazy (when saveable) if possible(to provide save features) 
+template RangeRStream(S, BufType = ubyte) if (isRStream!S) {
 	static if (isMarkableRStream!S) {
 		alias RangeRStream = LazyRangeRStream!(S, BufType);
 	} else {
@@ -338,6 +341,7 @@ unittest {
 	assert(chunker.empty);
 }
 
+///streams chunks as a range, tries to be lazy (when saveable) if possible
 auto rangeRStream(Btype = ubyte, S)(S stream, Btype[] buf) {
 	return RangeRStream!(S, Btype)(stream, buf);
 }
@@ -374,7 +378,7 @@ deprecated auto allRStream(S)(S s) {
 	return AllRStream!S(s);
 }
 
-struct RawRStream(S, T, bool check = true) if (isRStream!S) { //reads exactly from memory
+struct RawRStream(S, T, bool check = true) if (isRStream!S) {
 	S stream;
 	mixin ralias!stream;
 	mixin autoSave!stream;
@@ -410,14 +414,14 @@ unittest {
 	s.readAr(b2);
 	assert(b2 == "bc");
 }
-
+///reads typed data exactly from memory
 auto rawRStream(Type, bool check = true, S)(S stream) {
 	return RawRStream!(S, Type, check)(stream);
 }
 
 import etc.c.zlib;
 
-struct ZlibIRangeRStream(R) if (isInputRange!R) { //generates a rstream that reads compressed data from a Inputrange of void[] 
+struct ZlibIRangeRStream(R) if (isInputRange!R) {
 	R range;
 	z_stream zstream;
 	bool empt;
@@ -496,11 +500,11 @@ struct ZlibIRangeRStream(R) if (isInputRange!R) { //generates a rstream that rea
 		inflateEnd(&zstream);
 	}
 }
-
+///generates a rstream that reads compressed data from a Inputrange of void[]
 auto zlibIRangeRStream(alias init = inflateInit, R)(R range) {
 	return ZlibIRangeRStream!(R).ctor!init(range);
 }
-//a rstream that reads compressed data from a sub rstream
+
 struct ZlibRStream(S) if (isRStream!S) { //buffers, reads more than needed
 	ZlibIRangeRStream!(RangeRStream!(S, void)) stream;
 	alias stream this;
@@ -516,7 +520,7 @@ struct ZlibRStream(S) if (isRStream!S) { //buffers, reads more than needed
 		}
 	}
 }
-
+///a rstream that reads compressed data from a sub rstream
 auto zlibRStream(alias init = inflateInit, S)(S s, void[] buf) {
 	auto str = ZlibRStream!(S)();
 	str.stream = zlibIRangeRStream!(init)(rangeRStream(s, buf));
@@ -584,7 +588,7 @@ unittest {
 	assert(buf2[0 .. 6] == " world");
 }
 
-struct Crc32RStream(S) if (isRStream!S) { //generates crc32 around data read
+struct Crc32RStream(S) if (isRStream!S) {
 	import etc.c.zlib;
 
 	S stream;
@@ -620,11 +624,12 @@ unittest {
 	assert(str.crc == res);
 }
 
+///generates crc32 around data read
 auto crc32RStream(S)(S s) {
 	return Crc32RStream!(S)(s);
 }
 
-struct Adler32RStream(S) if (isRStream!S) { //generates crc32 around data read
+struct Adler32RStream(S) if (isRStream!S) {
 	import etc.c.zlib;
 
 	S stream;
@@ -659,14 +664,12 @@ unittest {
 	str.skip(1000);
 	assert(str.adler == res);
 }
-
+///generates crc32 around data read
 auto adler32RStream(S)(S s) {
 	return Adler32RStream!(S)(s);
 }
 
-//Left Right stream
-//you can chain these together eg: LRStream!(MemRStream,LRStream(MemRStream,MemRStream))
-struct LRStream(S1, S2) if (isRStream!S1 && isRStream!S2) { // a stream that reads from the first until it's empty then reads from the second
+struct LRStream(S1, S2) if (isRStream!S1 && isRStream!S2) {
 	S1 stream1;
 	S2 stream2;
 	bool remain = true;
@@ -771,11 +774,14 @@ unittest {
 	assert(str.skip(1) == 1);
 }
 
+/** a stream that reads from the first until it's empty then reads from the second
+	you can chain these together eg: LRStream!(MemRStream,LRStream(MemRStream,MemRStream))
+*/
 auto lrStream(S1, S2)(S1 s1, S2 s2) {
 	return LRStream!(S1, S2)(s1, s2);
 }
 
-struct JoinRStream(R, bool allowsave = false) if (isInputRange!R && isRStream!(ElementType!R)) { //joins a range of rstreams into a single rstream
+struct JoinRStream(R, bool allowsave = false) if (isInputRange!R && isRStream!(ElementType!R)) {
 	R range;
 	bool eof_;
 
@@ -873,7 +879,7 @@ unittest {
 	assert(buf[0 .. 1] == [2]);
 	assert(stream.skipRest == 8);
 }
-
+///joins a range of rstreams into a single rstream
 auto joinRStream(R)(R r) {
 	return JoinRStream!(R, false)(r);
 }
@@ -882,8 +888,10 @@ unittest {
 	auto a = joinRStream([MemRStream()]);
 }
 
-auto sjoinRStream(R)(R r) { //saveable join stream, MAKE SURE R.save CALLS R.front.save
-	//maybe use sjoinRStream(cache(map!(a=>a.save)(your_range_varible_here)))
+///saveable join stream, MAKE SURE R.save CALLS R.front.save
+///maybe use sjoinRStream(cache(map!(a=>a.save)(your_range_varible_here)))
+auto sjoinRStream(R)(R r) {
+
 	return JoinRStream!(R, true)(r);
 }
 

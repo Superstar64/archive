@@ -11,9 +11,12 @@ alias WStreamTur = TypeTuple!(WStream_, TypeWStream_, DisposeWStream_, StringWSt
 
 //generally you want a function that does all the flushing and closing calling the function that does all the writing
 
-//a writeable stream
-interface WStream_ { //assigning or copying may make this stream invalid
-	void writeFill(const(void[]) buf); //fully write buf to output
+/**a writeable stream
+   assigning or copying may make this stream invalid
+*/
+interface WStream_ { //
+	///fully write buf to output
+	void writeFill(const(void[]) buf);
 	template IS(S) {
 		enum bool IS = isWStream!S;
 	}
@@ -35,29 +38,29 @@ unittest {
 	static assert(!isWStream!emp);
 	static assert(isWStream!WStream_);
 }
-//typed stream, you can write spesific types
+///typed stream, you can write spesific types
 interface TypeWStream_ : WStream_ {
-	void write(ubyte b); //writes b to stream
-	void write(ushort b); //ditto
-	void write(uint b); //ditto
-	void write(ulong b); //ditto
-	void write(byte b); //ditto
-	void write(short b); //ditto
-	void write(int b); //ditto
-	void write(long b); //ditto
-	void write(float b); //ditto
+	void write(ubyte b); ///writes b to stream
+	void write(ushort b); ///ditto
+	void write(uint b); ///ditto
+	void write(ulong b); ///ditto
+	void write(byte b); ///ditto
+	void write(short b); ///ditto
+	void write(int b); ///ditto
+	void write(long b); ///ditto
+	void write(float b); ///ditto
 	void write(double b); //ditto
 
-	void writeAr(in ubyte[] b); //ditto
-	void writeAr(in ushort[] b); //ditto
-	void writeAr(in uint[] b); //ditto
-	void writeAr(in ulong[] b); //ditto
-	void writeAr(in byte[] b); //ditto
-	void writeAr(in short[] b); //ditto
-	void writeAr(in int[] b); //ditto
-	void writeAr(in long[] b); //ditto
-	void writeAr(in float[] b); //ditto
-	void writeAr(in double[] b); //ditto
+	void writeAr(in ubyte[] b); ///ditto
+	void writeAr(in ushort[] b); ///ditto
+	void writeAr(in uint[] b); ///ditto
+	void writeAr(in ulong[] b); ///ditto
+	void writeAr(in byte[] b); ///ditto
+	void writeAr(in short[] b); ///ditto
+	void writeAr(in int[] b); ///ditto
+	void writeAr(in long[] b); ///ditto
+	void writeAr(in float[] b); ///ditto
+	void writeAr(in double[] b); ///ditto
 	template IS(S) {
 		enum IS = isTypeWStream!S;
 	}
@@ -94,11 +97,13 @@ unittest {
 	static assert(isTypeWStream!TypeWStream_);
 	static assert(!isTypeWStream!WStream_);
 }
-//a stream that can flush output and close
+///a stream that can flush output and close
 interface DisposeWStream_ : WStream_ {
-	@property void flush(); //flush buf to the output, may do nothing
-	@property void close(); //close the steam may do nothing
-	//on assertion mode close may make all methods of the stream throw errors
+	///flush buf to the output, may do nothing
+	@property void flush();
+	///close the steam may do nothing
+	@property void close();
+
 	template IS(S) {
 		enum bool IS = isDisposeWStream!S;
 	}
@@ -116,14 +121,14 @@ unittest {
 	static assert(!isDisposeWStream!WStream_);
 	static assert(isDisposeWStream!DisposeWStream_);
 }
-//write string to a stream
+///write string to a stream
 interface StringWStream_ : WStream_ {
-	void write(char c); //writes c to the steam
-	void write(wchar c); //ditto
-	void write(dchar c); //ditto
-	void writeAr(in char[] c); //ditto
-	void writeAr(in wchar[] c); //ditto
-	void writeAr(in dchar[] c); //ditto
+	void write(char c); ///writes c to the steam
+	void write(wchar c); ///ditto
+	void write(dchar c); ///ditto
+	void writeAr(in char[] c); ///ditto
+	void writeAr(in wchar[] c); ///ditto
+	void writeAr(in dchar[] c); ///ditto
 	template IS(S) {
 		enum IS = isStringWStream!S;
 	}
@@ -147,7 +152,6 @@ unittest {
 	static assert(!isStringWStream!WStream_);
 }
 
-//Wraps s in a class usefull for virtual pointers
 class WStreamWrap(S, Par = Object) : Par, WStreamInterfaceOf!S {
 	private S raw;
 	alias raw this;
@@ -296,7 +300,7 @@ unittest {
 		sr.flush();
 	}
 }
-
+///Wraps s in a class usefull for virtual pointers
 auto wstreamWrap(Par = Object, S)(S s) {
 	return new WStreamWrap!(S, Par)(s);
 }
@@ -304,16 +308,16 @@ auto wstreamWrap(Par = Object, S)(S s) {
 unittest {
 	auto a = wstreamWrap(MemWStream());
 }
-
-template WStreamInterfaceOf(S) { //return interface of all streams that S supports
+///return interface of all streams that S supports
+template WStreamInterfaceOf(S) {
 	template I(A) {
 		enum I = A.IS!(S);
 	}
 
 	alias WStreamInterfaceOf = interFuse!(Filter!(I, WStreamTur));
 }
-
-template hasW(S, T) { //checks if the stream supports type T
+///checks if the stream supports type T
+template hasW(S, T) {
 	enum bool hasW = is(typeof((inout int = 0) {
 		S s = void;
 		T t = void;
@@ -328,7 +332,7 @@ unittest {
 	static assert(hasW!(typeof(a), ubyte));
 	static assert(!hasW!(typeof(a), bool));
 }
-
+///a writeable stream is an output range
 auto put(WStream)(ref WStream w, void[] buf) if (isWStream!WStream) {
 	return w.writeFill(buf);
 }
@@ -338,7 +342,7 @@ unittest {
 	a.put(cast(ubyte[])[1, 2, 3]);
 	assert(cast(ubyte[])(a.array) == [1, 2, 3]);
 }
-
+///a output range of void[] is a writeable stream
 auto writeFill(Range)(ref Range r, void[] buf) if (isOutputRange!(Range, void[])) {
 	return std.range.put(r, buf);
 }
@@ -357,13 +361,14 @@ unittest {
 	writeFill(a, data);
 	a.writeFill(data);
 }
-
+///forwards writeFill
 mixin template walias(alias stream) {
 	auto writeFill(in void[] arg) {
 		return stream.writeFill(arg);
 	}
 }
 
+///
 mixin template wclose(alias stream) {
 	static if (isDisposeWStream!(typeof(stream))) {
 		auto flush() {

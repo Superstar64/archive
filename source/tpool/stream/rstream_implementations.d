@@ -1,8 +1,11 @@
 module tpool.stream.rstream_implementations;
 import tpool.stream.rstream;
+import std.stdio;
+import std.socket;
 
-struct MemRStream { //a rstream that reads from memory
-	import std.c.string;
+///a rstream that reads from memory
+struct MemRStream {
+	import core.stdc.string;
 
 	const(void)[] arr;
 
@@ -64,7 +67,7 @@ unittest {
 
 alias memRStream = MemRStream;
 
-struct FileRStream(bool seekable = true) { //a rstream wrapper around a file
+struct FileRStream(bool seekable = true) {
 	import std.stdio;
 
 	File file;
@@ -124,8 +127,8 @@ debug (rstream_file) {
 		}
 	}
 }
-import std.stdio;
 
+///a rstream wrapper around a file
 auto fileRStream(bool seekable = true)(File f) {
 	return FileRStream!(seekable)(f);
 }
@@ -134,8 +137,7 @@ unittest {
 	auto f = fileRStream(stdin);
 }
 
-import std.socket;
-
+//a stream that wraps around a socket
 struct SocketRStream {
 	Socket sock;
 

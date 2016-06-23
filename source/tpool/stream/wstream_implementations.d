@@ -1,8 +1,8 @@
 module tpool.stream.wstream_implementations;
 import tpool.stream.wstream;
 
-
-struct FileWStream {//a wstream wrapper for stdio.file
+///a wstream wrapper for stdio.file
+struct FileWStream {
 	import std.stdio;
 
 	File file;
@@ -27,9 +27,10 @@ unittest {
 }
 
 alias fileWStream = FileWStream;
-struct MemWStream { //a stream that stores data into memory
+///a stream that stores data into memory
+struct MemWStream {
 	import std.typecons;
-
+	///
 	void[] array;
 
 	void writeFill(const void[] buf) {
@@ -46,7 +47,8 @@ unittest {
 }
 
 alias memWStream = MemWStream;
-struct VoidWStream { //a stream that ignores all calls
+///a stream that ignores all calls
+struct VoidWStream {
 	void opDispatch(string s, T)(T t) {
 	}
 }
@@ -58,6 +60,7 @@ unittest {
 alias voidWStream = VoidWStream;
 import std.socket;
 
+//a stream that wraps around a socket
 struct SocketWStream {
 	Socket s;
 

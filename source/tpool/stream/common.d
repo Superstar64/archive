@@ -1,7 +1,8 @@
 module tpool.stream.common;
 import std.typetuple;
 
-template interFuse(T...) { //fuse interfaces
+///fuse interfaces
+template interFuse(T...) {
 	interface interFuse : T {
 	}
 }
@@ -19,8 +20,8 @@ alias StringTypes = TypeTuple!(char, wchar, dchar);
 template isStringType(T) {
 	enum bool isStringType = is(T == char) || is(T == wchar) || is(T == dchar);
 }
-
-mixin template autoSave(alias sub, Args...) { //provides a default save, calling the constructer with the args provided, STREAM TYPE SHOULD BE THE FIRST IN THE CONSTRUCTER AND THE FIRST TYPE IN THIS LIST
+///provides a default save, calling the constructer with the args provided, stream type should be the first in the constructor and the first type in the list
+mixin template autoSave(alias sub, Args...) {
 	import std.traits;
 
 	static if (is(typeof((inout int = 0) { typeof(sub) a = sub.save; }))) {

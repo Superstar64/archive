@@ -1,19 +1,19 @@
 module tpool.format.tar;
 import tpool.stream.rstream;
 import std.exception;
-import std.c.string : strlen;
+import core.stdc.string: strlen;
 
-//do not call functions that copy and save this element with out calling tarRSave
 struct TarRRange(RStream) if (isRStream!RStream) {
+	///
 	struct TarElem {
-		LimitRStream!RStream stream;
-		char[] name;
-		uint mode;
-		uint ownID;
-		uint groupID;
-		uint lastModTime; //in unix time
-		char link;
-		char[] linkName;
+		LimitRStream!RStream stream; ///
+		char[] name; ///
+		uint mode; ///
+		uint ownID; ///
+		uint groupID; ///
+		uint lastModTime; ///in unix time
+		char link; ///
+		char[] linkName; ///
 	}
 
 	RStream stream;
@@ -128,11 +128,13 @@ struct TarRRange(RStream) if (isRStream!RStream) {
 		}
 	}
 }
-
+/**convert a stream into an input of tar elements
+  do not copy and save elements with out calling tarRSave*/
 auto tarRRange(S)(S stream, ubyte[] buffer) {
 	return TarRRange!S(stream, buffer);
 }
 
+///allows saving of tar elements
 auto tarRSave(R)(R range) {
 	import std.algorithm;
 

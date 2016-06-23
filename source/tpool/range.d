@@ -1,4 +1,4 @@
-module tpool.range;
+deprecated module tpool.range;
 import std.range;
 import tpool.stream.common : autoSave;
 public import std.algorithm : cache;
