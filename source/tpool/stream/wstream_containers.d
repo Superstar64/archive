@@ -197,7 +197,7 @@ struct CountWStream(S) if (isWStream!S) {
 	S stream;
 	mixin wclose!stream;
 
-	ulong len;///
+	ulong len; ///
 	auto writeFill(const void[] buf) {
 		len += buf.length;
 		return stream.writeFill(buf);

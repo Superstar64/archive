@@ -30,6 +30,7 @@ alias fileWStream = FileWStream;
 ///a stream that stores data into memory
 struct MemWStream {
 	import std.typecons;
+
 	///
 	void[] array;
 

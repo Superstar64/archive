@@ -1,7 +1,7 @@
 module tpool.format.tar;
 import tpool.stream.rstream;
 import std.exception;
-import core.stdc.string: strlen;
+import core.stdc.string : strlen;
 
 struct TarRRange(RStream) if (isRStream!RStream) {
 	///
