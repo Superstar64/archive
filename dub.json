@@ -11,9 +11,18 @@
 			"targetType":"library"
 		},
 		{
-			"name":"use_phobos_cache",
-			"targetType":"library",
-			"versions":["phobos_cache"]
+			"name":"sample_read_tar",
+			"targetType":"executable",
+			"versions":["readtar"]
+		},
+		{
+			"name":"sample_read_gz",
+			"targetType":"executable",
+			"versions":["readgz"]
+		},{
+			"name":"sample_read_bytes",
+			"targetType":"executable",
+			"versions":["readbytes"]
 		}
 	]
 }
