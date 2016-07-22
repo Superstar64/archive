@@ -1,8 +1,15 @@
+
+I no longer have interest in supporting this libaray plese 
+use a alternate libaray such as flod:https://github.com/epi/flod
+
+Old README:
+
+
 Rangeish Stream libaray for D
 check out source/tpool/samples for examples
 
 
-dub link:http://code.dlang.org/packages/tornado-pool
+dub link(now broken):http://code.dlang.org/packages/tornado-pool
 
 See the license at UNLICENSE.txt
 
