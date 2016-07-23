@@ -1,7 +1,7 @@
 {
 	"name": "tornado-pool",
 	"description": "A template based stream libaray",
-	"license":"public domain",
+	"license":"BSL-1.0",
 	"authors": ["superstar64"],
 	"dependencies": {
 	},
