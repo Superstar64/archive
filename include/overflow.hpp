@@ -29,7 +29,7 @@ struct overflow {
     return overflow(-internal);
   }
 
-  overflow operator+(const overflow rhs) const {
+  overflow operator+(const overflow& rhs) const {
     if (internal < 0 && rhs.internal < 0) {
       if (min - internal > rhs.internal) {
         throw overflow_exception();
@@ -42,7 +42,7 @@ struct overflow {
     return overflow(internal + rhs.internal);
   }
 
-  overflow operator-(const overflow rhs) const {
+  overflow operator-(const overflow& rhs) const {
     if (rhs.internal < 0) {
       if (internal > max + rhs.internal) {
         throw overflow_exception();
@@ -56,7 +56,7 @@ struct overflow {
     return overflow(internal - rhs.internal);
   }
 
-  overflow operator*(const overflow rhs) const {
+  overflow operator*(const overflow& rhs) const {
     if (internal < 0 && rhs.internal < 0) {
       if (*this < overflow(max) / rhs.internal) {
         throw overflow_exception();
@@ -78,7 +78,7 @@ struct overflow {
     return overflow(internal * rhs.internal);
   }
 
-  overflow operator/(const overflow rhs) const {
+  overflow operator/(const overflow& rhs) const {
     if (internal == max && rhs.internal < 0 && rhs.internal == -1) {
       throw overflow_exception();
     }
@@ -86,30 +86,38 @@ struct overflow {
     return overflow(internal / rhs.internal);
   }
 
-  overflow operator%(const overflow rhs) const {
+  overflow operator%(const overflow& rhs) const {
     return overflow(internal % rhs.internal);
   }
 
-  void operator+=(const overflow rhs) { *this = *this + rhs; }
+  void operator+=(const overflow& rhs) { *this = *this + rhs; }
 
-  void operator-=(const overflow rhs) { *this = *this - rhs; }
+  void operator-=(const overflow& rhs) { *this = *this - rhs; }
 
-  void operator*=(const overflow rhs) { *this = *this * rhs; }
+  void operator*=(const overflow& rhs) { *this = *this * rhs; }
 
-  void operator/=(const overflow rhs) { *this = *this / rhs; }
+  void operator/=(const overflow& rhs) { *this = *this / rhs; }
 
-  void operator%=(const overflow rhs) { *this = *this % rhs; }
+  void operator%=(const overflow& rhs) { *this = *this % rhs; }
 
-  bool operator==(const overflow rhs) const { return internal == rhs.internal; }
+  bool operator==(const overflow& rhs) const {
+    return internal == rhs.internal;
+  }
 
-  bool operator!=(const overflow rhs) const { return internal != rhs.internal; }
+  bool operator!=(const overflow& rhs) const {
+    return internal != rhs.internal;
+  }
 
-  bool operator>(const overflow rhs) const { return internal > rhs.internal; }
+  bool operator>(const overflow& rhs) const { return internal > rhs.internal; }
 
-  bool operator<(const overflow rhs) const { return internal < rhs.internal; }
+  bool operator<(const overflow& rhs) const { return internal < rhs.internal; }
 
-  bool operator>=(const overflow rhs) const { return internal >= rhs.internal; }
+  bool operator>=(const overflow& rhs) const {
+    return internal >= rhs.internal;
+  }
 
-  bool operator<=(const overflow rhs) const { return internal == rhs.internal; }
+  bool operator<=(const overflow& rhs) const {
+    return internal == rhs.internal;
+  }
 };
 }
