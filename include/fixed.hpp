@@ -24,47 +24,47 @@ struct fixed {
   }
 
   fixed operator-() const { return create(-internal); }
-  fixed operator+(fixed const rhs) const {
+  fixed operator+(const fixed rhs) const {
     return create(internal + rhs.internal);
   }
 
-  fixed operator-(fixed const rhs) const {
+  fixed operator-(const fixed rhs) const {
     return create(internal - rhs.internal);
   }
 
-  fixed operator*(fixed const rhs) const {
+  fixed operator*(const fixed rhs) const {
     return create(internal * rhs.internal / fixed_mul);
   }
 
-  fixed operator/(fixed const rhs) const {
+  fixed operator/(const fixed rhs) const {
     return create(fixed_mul * internal / rhs.internal);
   }
 
-  fixed operator%(fixed const rhs) const {
+  fixed operator%(const fixed rhs) const {
     return create(internal % rhs.internal);
   }
 
-  void operator+=(fixed const rhs) { *this = *this + rhs; }
+  void operator+=(const fixed rhs) { *this = *this + rhs; }
 
-  void operator-=(fixed const rhs) { *this = *this - rhs; }
+  void operator-=(const fixed rhs) { *this = *this - rhs; }
 
-  void operator*=(fixed const rhs) { *this = *this * rhs; }
+  void operator*=(const fixed rhs) { *this = *this * rhs; }
 
-  void operator/=(fixed const rhs) { *this = *this / rhs; }
+  void operator/=(const fixed rhs) { *this = *this / rhs; }
 
-  void operator%=(fixed const rhs) { *this = *this % rhs; }
+  void operator%=(const fixed rhs) { *this = *this % rhs; }
 
-  bool operator==(fixed const rhs) const { return internal == rhs.internal; }
+  bool operator==(const fixed rhs) const { return internal == rhs.internal; }
 
-  bool operator!=(fixed const rhs) const { return internal != rhs.internal; }
+  bool operator!=(const fixed rhs) const { return internal != rhs.internal; }
 
-  bool operator>(fixed const rhs) const { return internal > rhs.internal; }
+  bool operator>(const fixed rhs) const { return internal > rhs.internal; }
 
-  bool operator<(fixed const rhs) const { return internal < rhs.internal; }
+  bool operator<(const fixed rhs) const { return internal < rhs.internal; }
 
-  bool operator>=(fixed const rhs) const { return internal >= rhs.internal; }
+  bool operator>=(const fixed rhs) const { return internal >= rhs.internal; }
 
-  bool operator<=(fixed const rhs) const { return internal <= rhs.internal; }
+  bool operator<=(const fixed rhs) const { return internal <= rhs.internal; }
 
   ratio<T> to_ratio() const { return ratio<T>(internal, fixed_mul); }
 };

@@ -43,55 +43,55 @@ struct ratio {
 
   ratio operator-() const { return ratio(-top, bottom); }
 
-  ratio operator+(ratio const rhs) const {
+  ratio operator+(const ratio rhs) const {
     return ratio(top * rhs.bottom + bottom * rhs.top, bottom * rhs.bottom);
   }
 
-  ratio operator-(ratio const rhs) const {
+  ratio operator-(const ratio rhs) const {
     return ratio(top * rhs.bottom - bottom * rhs.top, bottom * rhs.bottom);
   }
 
-  ratio operator*(ratio const rhs) const {
+  ratio operator*(const ratio rhs) const {
     return ratio(top * rhs.top, bottom * rhs.bottom);
   }
 
-  ratio operator/(ratio const rhs) const {
+  ratio operator/(const ratio rhs) const {
     return ratio(top * rhs.bottom, bottom * rhs.top);
   }
 
-  ratio operator%(ratio const rhs) const {
+  ratio operator%(const ratio rhs) const {
     return ratio((top * rhs.bottom) % (bottom * rhs.top), bottom * rhs.bottom);
   }
 
-  void operator+=(ratio const rhs) { *this = *this + rhs; }
+  void operator+=(const ratio rhs) { *this = *this + rhs; }
 
-  void operator-=(ratio const rhs) { *this = *this - rhs; }
+  void operator-=(const ratio rhs) { *this = *this - rhs; }
 
-  void operator*=(ratio const rhs) { *this = *this * rhs; }
+  void operator*=(const ratio rhs) { *this = *this * rhs; }
 
-  void operator/=(ratio const rhs) { *this = *this / rhs; }
+  void operator/=(const ratio rhs) { *this = *this / rhs; }
 
-  void operator%=(ratio const rhs) { *this = *this % rhs; }
+  void operator%=(const ratio rhs) { *this = *this % rhs; }
 
-  bool operator==(ratio const rhs) const {
+  bool operator==(const ratio rhs) const {
     return top == rhs.top && bottom == rhs.bottom;
   }
 
-  bool operator!=(ratio const rhs) const { return !(*this == rhs); }
+  bool operator!=(const ratio rhs) const { return !(*this == rhs); }
 
-  bool operator>(ratio const rhs) const {
+  bool operator>(const ratio rhs) const {
     return top * rhs.bottom > bottom * rhs.top;
   }
 
-  bool operator<(ratio const rhs) const {
+  bool operator<(const ratio rhs) const {
     return top * rhs.bottom < bottom * rhs.top;
   }
 
-  bool operator>=(ratio const rhs) const {
+  bool operator>=(const ratio rhs) const {
     return top * rhs.bottom >= bottom * rhs.top;
   }
 
-  bool operator<=(ratio const rhs) const {
+  bool operator<=(const ratio rhs) const {
     return top * rhs.bottom <= bottom * rhs.top;
   }
 
