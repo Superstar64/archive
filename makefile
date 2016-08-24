@@ -13,7 +13,7 @@ $(UNITTEST_DEBUG) :
 format: $(FORMAT)
 
 %.format : %
-	clang-format -style=LLVM -i $<
+	clang-format -style=Chromium -i $<
 
 
 build/% : %.cpp build/unittest $(OBJECTS)

@@ -12,7 +12,7 @@ int main() {
   auto check = false;
   try {
     auto c = overflow(2147483647) + 1;
-  } catch (test &e) {
+  } catch (test& e) {
     check = true;
   }
   assert(check);
@@ -20,7 +20,7 @@ int main() {
 
   try {
     auto c = overflow(-2147483647) + -2;
-  } catch (test &e) {
+  } catch (test& e) {
     check = true;
   }
   assert(check);
@@ -28,7 +28,7 @@ int main() {
 
   try {
     auto c = overflow(-2147483648) - 1;
-  } catch (test &e) {
+  } catch (test& e) {
     check = true;
   }
   assert(check);
@@ -36,7 +36,7 @@ int main() {
 
   try {
     auto c = overflow(2147483647) - -1;
-  } catch (test &e) {
+  } catch (test& e) {
     check = true;
   }
   assert(check);
@@ -44,7 +44,7 @@ int main() {
 
   try {
     auto c = overflow(65536) * 65536;
-  } catch (test &e) {
+  } catch (test& e) {
     check = true;
   }
   assert(check);
@@ -52,7 +52,7 @@ int main() {
 
   try {
     auto c = overflow(65536) * -65536;
-  } catch (test &e) {
+  } catch (test& e) {
     check = true;
   }
   assert(check);
@@ -60,7 +60,7 @@ int main() {
 
   try {
     auto c = overflow(-65536) * 65536;
-  } catch (test &e) {
+  } catch (test& e) {
     check = true;
   }
   assert(check);
@@ -68,7 +68,7 @@ int main() {
 
   try {
     auto c = overflow(-65536) * -65536;
-  } catch (test &e) {
+  } catch (test& e) {
     check = true;
   }
   assert(check);
@@ -77,7 +77,7 @@ int main() {
   using fixed = number::fixed<overflow, fixed_mul>;
   try {
     auto c = fixed(21474836, 47) + fixed(1);
-  } catch (test &e) {
+  } catch (test& e) {
     check = true;
   }
   assert(check);

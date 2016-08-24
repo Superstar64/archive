@@ -4,10 +4,12 @@
 
 namespace number {
 
-template <typename T, const T &ratio_mul> struct fixed;
+template <typename T, const T& ratio_mul>
+struct fixed;
 
-template <typename T> struct ratio {
-private:
+template <typename T>
+struct ratio {
+ private:
   static T gcf(T a, T b) {
     if (b == 0) {
       return a;
@@ -23,7 +25,7 @@ private:
     }
   }
 
-public:
+ public:
   T top;
   T bottom;
   ratio(T num) : top(num), bottom(1) {}
@@ -65,7 +67,7 @@ public:
 
   void operator-=(ratio const rhs) { *this = *this - rhs; }
 
-  void operator*=(ratio const rhs) { *this = *this *rhs; }
+  void operator*=(ratio const rhs) { *this = *this * rhs; }
 
   void operator/=(ratio const rhs) { *this = *this / rhs; }
 
@@ -93,7 +95,8 @@ public:
     return top * rhs.bottom <= bottom * rhs.top;
   }
 
-  template <const T &fixed_mul> fixed<T, fixed_mul> to_fixed() const {
+  template <const T& fixed_mul>
+  fixed<T, fixed_mul> to_fixed() const {
     return fixed<T, fixed_mul>(top / bottom, top % bottom * fixed_mul / bottom);
   }
 };

@@ -4,15 +4,16 @@
 
 namespace number {
 
-template <typename T, const T &fixed_mul> struct fixed {
-private:
+template <typename T, const T& fixed_mul>
+struct fixed {
+ private:
   static fixed create(T val) {
     auto ret = fixed();
     ret.internal = val;
     return ret;
   }
 
-public:
+ public:
   T internal;
   fixed() : internal(0) {}
 
@@ -47,7 +48,7 @@ public:
 
   void operator-=(fixed const rhs) { *this = *this - rhs; }
 
-  void operator*=(fixed const rhs) { *this = *this *rhs; }
+  void operator*=(fixed const rhs) { *this = *this * rhs; }
 
   void operator/=(fixed const rhs) { *this = *this / rhs; }
 

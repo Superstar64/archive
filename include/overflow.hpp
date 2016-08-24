@@ -1,23 +1,24 @@
 #pragma once
-#include <limits>
 #include <exception>
+#include <limits>
 
 namespace number {
 
 class overflow_exception : std::exception {
-public:
+ public:
   overflow_exception() : std::exception() {}
   virtual ~overflow_exception() {}
-  const char *what() const noexcept override { return "integer overflow"; }
+  const char* what() const noexcept override { return "integer overflow"; }
 };
 
 // expect either signed two's complement or unsigned two's complement
-template <typename T> struct overflow {
-private:
+template <typename T>
+struct overflow {
+ private:
   static const T max = std::numeric_limits<T>::max();
   static const T min = std::numeric_limits<T>::min();
 
-public:
+ public:
   T internal;
   overflow(T number) : internal(number) {}
 
@@ -93,7 +94,7 @@ public:
 
   void operator-=(overflow const rhs) { *this = *this - rhs; }
 
-  void operator*=(overflow const rhs) { *this = *this *rhs; }
+  void operator*=(overflow const rhs) { *this = *this * rhs; }
 
   void operator/=(overflow const rhs) { *this = *this / rhs; }
 
