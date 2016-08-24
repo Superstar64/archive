@@ -11,6 +11,6 @@ check out source/tpool/samples for examples
 
 dub link(now broken):http://code.dlang.org/packages/tornado-pool
 
-See the license at UNLICENSE.txt
+See the license at LICENSE.txt
 
 Don't blame me if the code doesn't work( or compile).
