@@ -13,17 +13,17 @@ class overflow_exception : std::exception {
 
 template <typename T>
 struct overflow_fail {
-  void add(const T& lhs, const T& rhs) { throw overflow_exception(); }
+  void add(const T& lhs, const T& rhs) const { throw overflow_exception(); }
 
-  void sub(const T& lhs, const T& rhs) { throw overflow_exception(); }
+  void sub(const T& lhs, const T& rhs) const { throw overflow_exception(); }
 
-  void mul(const T& lhs, const T& rhs) { throw overflow_exception(); }
+  void mul(const T& lhs, const T& rhs) const { throw overflow_exception(); }
 
-  void div(const T& lhs, const T& rhs) { throw overflow_exception(); }
+  void div(const T& lhs, const T& rhs) const { throw overflow_exception(); }
 
-  void mod(const T& lhs, const T& rhs) { throw overflow_exception(); }
+  void mod(const T& lhs, const T& rhs) const { throw overflow_exception(); }
 
-  void neg(const T& self) { throw overflow_exception(); }
+  void neg(const T& self) const { throw overflow_exception(); }
 };
 
 // expect either signed two's complement or unsigned two's complement
@@ -35,12 +35,12 @@ struct overflow {
 
  public:
   T internal;
-  mutable OnFail fail;
+  OnFail fail;
   overflow(T number, OnFail fail = OnFail()) : internal(number), fail(fail) {}
 
   overflow operator-() const {
-    if (min < 0) {
-      fail.neg(*this);
+    if (min >= 0) {
+      fail.neg(internal);
     }
     return overflow(-internal);
   }
