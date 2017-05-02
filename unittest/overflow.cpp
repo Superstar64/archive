@@ -74,6 +74,14 @@ int main() {
   assert(check);
   check = false;
 
+  try {
+    auto c = -number::overflow<uint32_t>(4);
+  } catch (test& e) {
+    check = true;
+  }
+  assert(check);
+  check = false;
+
   using fixed = number::fixed<overflow, fixed_mul>;
   try {
     auto c = fixed(21474836, 47) + fixed(1);
