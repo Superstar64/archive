@@ -4,6 +4,9 @@
 
 namespace number {
 
+template <typename T>
+struct ratio;
+
 template <typename T, const T& fixed_mul>
 struct fixed {
  private:

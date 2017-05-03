@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iostream>
+#include "fixed.hpp"
 
 namespace number {
 
