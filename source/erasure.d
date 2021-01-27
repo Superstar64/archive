@@ -1,3 +1,4 @@
+module erasure;
 import std.meta;
 import std.traits;
 import std.conv : to;
