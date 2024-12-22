@@ -1,0 +1,9 @@
+{
+	"name": "gravity_effects",
+	"description": "A minimal D application.",
+	"copyright": "Copyright © 2015, superstar64",
+	"authors": ["superstar64"],
+	"dependencies": {
+		"derelict-sdl2": "~>1.9.7"
+	}
+}
