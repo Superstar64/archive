@@ -1,0 +1,10 @@
+{
+	"authors": [
+		"superstar64"
+	],
+	"copyright": "Copyright © 2021, Freddy A Cubas \"superstar64\"",
+	"description": "A library for emulating java style type erasure (system-f)",
+	"license": "Boost",
+	"name": "erasure",
+	"targetType": "library"
+}

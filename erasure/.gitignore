@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/erasure
+erasure.so
+erasure.dylib
+erasure.dll
+erasure.a
+erasure.lib
+erasure-test-*
+*.exe
+*.o
+*.obj
+*.lst
