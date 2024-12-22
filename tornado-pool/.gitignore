@@ -1,0 +1,10 @@
+*.exe
+*.obj
+*.o
+build
+.dub
+dub.selections.json
+__test__library__
+libtornado-pool.a
+libtornado-pool.lib
+__test__default__

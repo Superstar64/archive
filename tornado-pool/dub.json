@@ -1,0 +1,28 @@
+{
+	"name": "tornado-pool",
+	"description": "A template based stream libaray",
+	"license":"BSL-1.0",
+	"authors": ["superstar64"],
+	"dependencies": {
+	},
+	"configurations":[
+		{
+			"name":"default",
+			"targetType":"library"
+		},
+		{
+			"name":"sample_read_tar",
+			"targetType":"executable",
+			"versions":["readtar"]
+		},
+		{
+			"name":"sample_read_gz",
+			"targetType":"executable",
+			"versions":["readgz"]
+		},{
+			"name":"sample_read_bytes",
+			"targetType":"executable",
+			"versions":["readbytes"]
+		}
+	]
+}
