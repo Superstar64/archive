@@ -1,0 +1,8 @@
+{
+	"name": "tagged_union",
+	"description": "Simple std.variant : Algebraic alternative",
+	"license": "BSL-1.0",
+	"authors": ["superstar64"],
+	"dependencies": {
+	}
+}
